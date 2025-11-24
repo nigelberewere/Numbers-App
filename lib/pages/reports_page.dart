@@ -4,6 +4,7 @@ import 'cash_flow_page.dart';
 import 'expense_analysis_page.dart';
 import 'income_statement_page.dart';
 import 'performance_trends_page.dart';
+import 'smart_recommendations_page.dart';
 import '../widgets/report_card.dart';
 
 class ReportsPage extends StatelessWidget {
@@ -12,9 +13,7 @@ class ReportsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Financial Reports'),
-      ),
+      appBar: AppBar(title: const Text('Financial Reports')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -25,9 +24,7 @@ class ReportsPage extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const IncomeStatementPage(),
-                ),
+                MaterialPageRoute(builder: (_) => const IncomeStatementPage()),
               );
             },
           ),
@@ -38,9 +35,7 @@ class ReportsPage extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const BalanceSheetPage(),
-                ),
+                MaterialPageRoute(builder: (_) => const BalanceSheetPage()),
               );
             },
           ),
@@ -51,9 +46,7 @@ class ReportsPage extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const CashFlowPage(),
-                ),
+                MaterialPageRoute(builder: (_) => const CashFlowPage()),
               );
             },
           ),
@@ -64,9 +57,7 @@ class ReportsPage extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const ExpenseAnalysisPage(),
-                ),
+                MaterialPageRoute(builder: (_) => const ExpenseAnalysisPage()),
               );
             },
           ),
@@ -91,11 +82,7 @@ class ReportsPage extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const ReportDetailPage(
-                    title: 'Smart Recommendations',
-                    description:
-                        'Personalized guidance powered by AI will appear here once the intelligence engine is ready.',
-                  ),
+                  builder: (_) => const SmartRecommendationsPage(),
                 ),
               );
             },
@@ -119,9 +106,7 @@ class ReportDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-      ),
+      appBar: AppBar(title: Text(title)),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -143,10 +128,9 @@ class ReportDetailPage extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 description,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(color: Colors.grey[600]),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                 textAlign: TextAlign.center,
               ),
             ],

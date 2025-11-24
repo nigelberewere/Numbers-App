@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
@@ -9,20 +10,19 @@ class AboutPage extends StatelessWidget {
     'Nigel Berewere': '',
     'Dennis Mademutsa': '',
     'Tadaishe Chibondo': '',
-    
   };
 
   static final Uri _websiteUri = Uri.parse('https://numbersapp.io');
-  static final Uri _privacyUri = Uri.parse('https://numbersapp.io/legal/privacy');
+  static final Uri _privacyUri = Uri.parse(
+    'https://numbersapp.io/legal/privacy',
+  );
   static final Uri _termsUri = Uri.parse('https://numbersapp.io/legal/terms');
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('About Numbers'),
-      ),
+      appBar: AppBar(title: const Text('About Numbers')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -53,12 +53,11 @@ class AboutPage extends StatelessWidget {
               child: ClipOval(
                 child: Padding(
                   padding: const EdgeInsets.all(6.0),
-                  child: Image.asset(
-                    'lib/assets/icon/logo.png',
+                  child: SvgPicture.asset(
+                    'lib/assets/icon/icon.svg',
                     width: 48,
                     height: 48,
                     fit: BoxFit.contain,
-                    semanticLabel: 'Numbers app logo',
                   ),
                 ),
               ),
@@ -70,7 +69,9 @@ class AboutPage extends StatelessWidget {
                 children: [
                   Text(
                     'Numbers',
-                    style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -88,7 +89,8 @@ class AboutPage extends StatelessWidget {
                         label: const Text('Visit Website'),
                       ),
                       OutlinedButton.icon(
-                        onPressed: () => _launch(Uri.parse('mailto:hello@numbersapp.io')),
+                        onPressed: () =>
+                            _launch(Uri.parse('mailto:hello@numbersapp.io')),
                         icon: const Icon(Icons.mail_outline),
                         label: const Text('Contact'),
                       ),
@@ -119,7 +121,9 @@ class AboutPage extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               'Across Africa, growing businesses rely on Numbers for powerful analytics, automated insights, and simple process automation.',
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.outline),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
             ),
           ],
         ),
@@ -135,7 +139,9 @@ class AboutPage extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.groups_outlined),
             title: const Text('Meet the Team'),
-            subtitle: const Text('We are a distributed team with roots in Zimbabwe.'),
+            subtitle: const Text(
+              'We are a distributed team with roots in Zimbabwe.',
+            ),
           ),
           ..._teamMembers.entries.map(
             (entry) => Column(
@@ -164,13 +170,18 @@ class AboutPage extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('Release Info'),
-            subtitle: const Text('Stay up to date with the latest improvements'),
+            subtitle: const Text(
+              'Stay up to date with the latest improvements',
+            ),
           ),
           const Divider(height: 0),
           ListTile(
             leading: CircleAvatar(
               backgroundColor: theme.colorScheme.secondaryContainer,
-              child: Icon(Icons.system_update_alt, color: theme.colorScheme.secondary),
+              child: Icon(
+                Icons.system_update_alt,
+                color: theme.colorScheme.secondary,
+              ),
             ),
             title: const Text('App Version'),
             subtitle: FutureBuilder<PackageInfo>(
@@ -191,7 +202,10 @@ class AboutPage extends StatelessWidget {
           ListTile(
             leading: CircleAvatar(
               backgroundColor: theme.colorScheme.tertiaryContainer,
-              child: Icon(Icons.schedule_outlined, color: theme.colorScheme.tertiary),
+              child: Icon(
+                Icons.schedule_outlined,
+                color: theme.colorScheme.tertiary,
+              ),
             ),
             title: const Text('Last Updated'),
             subtitle: const Text('November 1, 2025'),
@@ -225,7 +239,6 @@ class AboutPage extends StatelessWidget {
             onTap: () => _launch(_termsUri),
           ),
           const Divider(height: 0),
-          
         ],
       ),
     );

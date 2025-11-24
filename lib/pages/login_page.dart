@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../models/auth_user.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -66,14 +67,16 @@ class _LoginPageState extends State<LoginPage> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('OK'),
-          )
+          ),
         ],
       ),
     );
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -97,7 +100,10 @@ class _LoginPageState extends State<LoginPage> {
         children: [
           Image.asset('lib/assets/icon/google_logo.png', width: 20, height: 20),
           const SizedBox(width: 12),
-          Text('Sign in with Google', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            'Sign in with Google',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
         ],
       ),
     );
@@ -114,7 +120,9 @@ class _LoginPageState extends State<LoginPage> {
             child: Card(
               margin: const EdgeInsets.all(16),
               elevation: 6,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
@@ -123,13 +131,23 @@ class _LoginPageState extends State<LoginPage> {
                     // App logo + title
                     Row(
                       children: [
-                        Image.asset('lib/assets/icon/logo.png', width: 56, height: 56),
+                        SvgPicture.asset(
+                          'lib/assets/icon/icon.svg',
+                          width: 56,
+                          height: 56,
+                        ),
                         const SizedBox(width: 12),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Numbers', style: Theme.of(context).textTheme.headlineSmall),
-                            Text('Manage your business data', style: Theme.of(context).textTheme.bodySmall),
+                            Text(
+                              'Numbers',
+                              style: Theme.of(context).textTheme.headlineSmall,
+                            ),
+                            Text(
+                              'Manage your business data',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
                           ],
                         ),
                       ],
@@ -143,8 +161,12 @@ class _LoginPageState extends State<LoginPage> {
                           child: ElevatedButton(
                             onPressed: () => setState(() => _isLogin = true),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: _isLogin ? Theme.of(context).colorScheme.primary : Colors.transparent,
-                              foregroundColor: _isLogin ? Colors.white : Theme.of(context).colorScheme.onSurface,
+                              backgroundColor: _isLogin
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Colors.transparent,
+                              foregroundColor: _isLogin
+                                  ? Colors.white
+                                  : Theme.of(context).colorScheme.onSurface,
                               elevation: 0,
                             ),
                             child: const Text('Login'),
@@ -155,8 +177,12 @@ class _LoginPageState extends State<LoginPage> {
                           child: ElevatedButton(
                             onPressed: () => setState(() => _isLogin = false),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: !_isLogin ? Theme.of(context).colorScheme.primary : Colors.transparent,
-                              foregroundColor: !_isLogin ? Colors.white : Theme.of(context).colorScheme.onSurface,
+                              backgroundColor: !_isLogin
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Colors.transparent,
+                              foregroundColor: !_isLogin
+                                  ? Colors.white
+                                  : Theme.of(context).colorScheme.onSurface,
                               elevation: 0,
                             ),
                             child: const Text('Sign up'),
@@ -173,11 +199,17 @@ class _LoginPageState extends State<LoginPage> {
                         children: [
                           TextFormField(
                             controller: _emailController,
-                            decoration: const InputDecoration(labelText: 'Email'),
+                            decoration: const InputDecoration(
+                              labelText: 'Email',
+                            ),
                             keyboardType: TextInputType.emailAddress,
                             validator: (v) {
                               if (v == null || v.isEmpty) return 'Enter email';
-                              if (!RegExp(r"^[^@\s]+@[^@\s]+\.[^@\s]+$").hasMatch(v)) return 'Enter a valid email';
+                              if (!RegExp(
+                                r"^[^@\s]+@[^@\s]+\.[^@\s]+$",
+                              ).hasMatch(v)) {
+                                return 'Enter a valid email';
+                              }
                               return null;
                             },
                           ),
@@ -187,14 +219,24 @@ class _LoginPageState extends State<LoginPage> {
                             decoration: InputDecoration(
                               labelText: 'Password',
                               suffixIcon: IconButton(
-                                icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
-                                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                ),
+                                onPressed: () => setState(
+                                  () => _obscurePassword = !_obscurePassword,
+                                ),
                               ),
                             ),
                             obscureText: _obscurePassword,
                             validator: (v) {
-                              if (v == null || v.isEmpty) return 'Enter password';
-                              if (v.length < 6) return 'Password at least 6 chars';
+                              if (v == null || v.isEmpty) {
+                                return 'Enter password';
+                              }
+                              if (v.length < 6) {
+                                return 'Password at least 6 chars';
+                              }
                               return null;
                             },
                           ),
@@ -204,7 +246,13 @@ class _LoginPageState extends State<LoginPage> {
                             child: ElevatedButton(
                               onPressed: _loading ? null : _submit,
                               child: _loading
-                                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                                  ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
                                   : Text(_isLogin ? 'Login' : 'Create account'),
                             ),
                           ),
@@ -213,22 +261,51 @@ class _LoginPageState extends State<LoginPage> {
                     ),
 
                     const SizedBox(height: 12),
-                    Row(children: [Expanded(child: Divider(color: isDark ? Colors.grey[700] : Colors.grey[300])), const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('or')), Expanded(child: Divider(color: isDark ? Colors.grey[700] : Colors.grey[300]))]),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Divider(
+                            color: isDark ? Colors.grey[700] : Colors.grey[300],
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8),
+                          child: Text('or'),
+                        ),
+                        Expanded(
+                          child: Divider(
+                            color: isDark ? Colors.grey[700] : Colors.grey[300],
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 12),
 
                     // Google button
                     _buildGoogleButton(context),
 
                     const SizedBox(height: 12),
-                    Text('By continuing you agree to our Terms and Privacy Policy', style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
+                    Text(
+                      'By continuing you agree to our Terms and Privacy Policy',
+                      style: Theme.of(context).textTheme.bodySmall,
+                      textAlign: TextAlign.center,
+                    ),
 
                     const SizedBox(height: 12),
                     if (_user != null)
                       Card(
                         margin: const EdgeInsets.only(top: 12),
                         child: ListTile(
-                          leading: _user!.photoUrl != null ? CircleAvatar(backgroundImage: NetworkImage(_user!.photoUrl!)) : null,
-                          title: Text(_user!.displayName ?? _user!.email ?? _user!.uid),
+                          leading: _user!.photoUrl != null
+                              ? CircleAvatar(
+                                  backgroundImage: NetworkImage(
+                                    _user!.photoUrl!,
+                                  ),
+                                )
+                              : null,
+                          title: Text(
+                            _user!.displayName ?? _user!.email ?? _user!.uid,
+                          ),
                           subtitle: Text(_user!.email ?? ''),
                           trailing: IconButton(
                             icon: const Icon(Icons.logout),

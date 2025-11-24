@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 /// A simple splash screen that shows the app logo and name then
 /// navigates to the given `next` page builder.
@@ -36,9 +37,9 @@ class _SplashPageState extends State<SplashPage>
     // Auto-navigate after the configured duration
     Timer(widget.duration, () {
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => widget.next()),
-      );
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => widget.next()));
     });
   }
 
@@ -62,8 +63,8 @@ class _SplashPageState extends State<SplashPage>
             mainAxisSize: MainAxisSize.min,
             children: [
               // App icon
-              Image.asset(
-                'lib/assets/icon/logo.png',
+              SvgPicture.asset(
+                'lib/assets/icon/icon.svg',
                 width: 120,
                 height: 120,
                 fit: BoxFit.contain,

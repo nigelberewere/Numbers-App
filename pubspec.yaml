@@ -48,6 +48,10 @@ dependencies:
   package_info_plus: ^4.0.0
   # Google Sign In (used by the login page). Backend/Firebase not required for the UI.
   google_sign_in: ^6.1.0
+  # SVG support
+  flutter_svg: ^2.0.10+1
+  # Gemini AI for smart recommendations
+  google_generative_ai: ^0.4.7
 
 dev_dependencies:
   flutter_test:
@@ -105,10 +109,11 @@ flutter:
 
 # Assets
   assets:
-    - lib/assets/icon/logo.png
+    - lib/assets/icon/icon.png
+    - lib/assets/icon/icon.svg
     - lib/assets/icon/google_logo.png
 # Configuration for flutter_launcher_icons to generate Android/iOS launcher icons
-flutter_icons:
+flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "lib/assets/icon/logo.png"
+  image_path: "lib/assets/icon/icon.png"

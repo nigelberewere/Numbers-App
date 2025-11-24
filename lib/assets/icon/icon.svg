@@ -1,0 +1,59 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Definitions for Gradients and Shadows -->
+  <defs>
+    <!-- Background Gradient (Deep Professional Navy/Slate) -->
+    <linearGradient id="bg-gradient" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1e293b" />
+      <stop offset="1" stop-color="#0f172a" />
+    </linearGradient>
+
+    <!-- Chart Bar Gradient (Vibrant Growth Green) -->
+    <linearGradient id="bar-gradient" x1="256" y1="100" x2="256" y2="400" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#34d399" />
+      <stop offset="1" stop-color="#059669" />
+    </linearGradient>
+
+    <!-- Accent/Trend Line Gradient -->
+    <linearGradient id="line-gradient" x1="100" y1="350" x2="412" y2="150" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6ee7b7" />
+      <stop offset="1" stop-color="#a7f3d0" />
+    </linearGradient>
+
+    <!-- Drop Shadow -->
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="15" />
+      <feOffset dx="0" dy="10" result="offsetblur" />
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3" />
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Main Container (Rounded App Icon Shape) -->
+  <rect x="0" y="0" width="512" height="512" rx="120" fill="url(#bg-gradient)" />
+
+  <!-- Grid Lines (Subtle background detail for "Finance") -->
+  <path d="M100 180 H412" stroke="#334155" stroke-width="4" stroke-linecap="round" opacity="0.5" />
+  <path d="M100 260 H412" stroke="#334155" stroke-width="4" stroke-linecap="round" opacity="0.5" />
+  <path d="M100 340 H412" stroke="#334155" stroke-width="4" stroke-linecap="round" opacity="0.5" />
+
+  <!-- Rising Bar Chart Elements -->
+  <!-- Bar 1 -->
+  <rect x="110" y="280" width="70" height="130" rx="12" fill="url(#bar-gradient)" filter="url(#shadow)" opacity="0.8" />
+  <!-- Bar 2 -->
+  <rect x="221" y="200" width="70" height="210" rx="12" fill="url(#bar-gradient)" filter="url(#shadow)" opacity="0.9" />
+  <!-- Bar 3 (Arrow) -->
+  <!-- Replaced Rect with Path for Arrow Shape -->
+  <path d="M332 410 L332 190 L302 190 L367 90 L432 190 L402 190 L402 410 Z" fill="url(#bar-gradient)" filter="url(#shadow)" stroke="#059669" stroke-width="6" stroke-linejoin="round" />
+
+  <!-- Trend Line (Overlaying the bars to show progress) -->
+  <path d="M90 310 L200 230 L290 260 L380 220" stroke="url(#line-gradient)" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" />
+  
+  <!-- Success Dot at the peak -->
+  <circle cx="380" cy="220" r="24" fill="#ecfdf5" stroke="#059669" stroke-width="8" />
+
+</svg>

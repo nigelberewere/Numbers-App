@@ -12,12 +12,15 @@ class AppColors {
 
 class AppConstants {
   static const String appName = 'NUMBERS';
-  static const String appDescription = 'Smart Record-Keeping and Financial Analytics';
-  
+  static const String appDescription =
+      'Smart Record-Keeping and Financial Analytics';
+
   // Currency
   static const String currencySymbol = '\$';
-  
+
   // Date formats
   static const String dateFormat = 'dd/MM/yyyy';
   static const String dateTimeFormat = 'dd/MM/yyyy HH:mm';
+
+  static const String geminiApiKey = 'AIzaSyC7mPSLOoNAV2S5Fkz1O0KNkEubBNe7Z3o';
 }
