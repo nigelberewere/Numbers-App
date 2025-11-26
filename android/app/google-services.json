@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "291925528153",
+    "project_id": "numbersapk",
+    "storage_bucket": "numbersapk.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:291925528153:android:f01b349dc0266b3b26eb48",
+        "android_client_info": {
+          "package_name": "com.jeopardyapps.numbers"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "291925528153-09qulegtur2ptjp4kjbvpbb1bh0pcdrg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKPbgnOykKP71IJgG1sViyzZRzKhboBf8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "291925528153-09qulegtur2ptjp4kjbvpbb1bh0pcdrg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

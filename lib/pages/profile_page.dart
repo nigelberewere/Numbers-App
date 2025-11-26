@@ -1,68 +1,64 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../models/models.dart';
 
-import '../services/auth_service.dart';
-import 'login_page_clean.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers.dart';
+import 'login_page.dart';
 
-class ProfilePage extends StatefulWidget {
+class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
 
   @override
-  State<ProfilePage> createState() => _ProfilePageState();
+  ConsumerState<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class _ProfilePageState extends ConsumerState<ProfilePage> {
   final NumberFormat _currency = NumberFormat.simpleCurrency(name: 'USD');
-
-  String _fullName = 'Nigel Berewere';
-  String _email = 'nigel.berewere@numbersapp.io';
-  String _businessName = 'Numbers Analytics Co.';
-  String _industry = 'Financial Services';
-  String _preferredCurrency = 'USD';
-
-  bool _emailNotifications = true;
-  bool _smsNotifications = false;
-
-  double _monthlyRevenueTarget = 12000;
-  double _monthlyExpenseCap = 4500;
 
   @override
   Widget build(BuildContext context) {
+    final userProfileAsync = ref.watch(userProfileProvider);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildProfileHeader(context),
-          const SizedBox(height: 16),
-          _buildBusinessDetails(context),
-          const SizedBox(height: 16),
-          _buildNotificationSettings(context),
-          
-          _buildTargets(context),
-          const SizedBox(height: 32),
-          OutlinedButton.icon(
-            onPressed: () async {
-              // Sign out via the auth service and take the user to the login screen.
-              final navigator = Navigator.of(context);
-              await authService.signOut();
-              if (!mounted) return;
-              navigator.pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const CleanLoginPage()),
-                (route) => false,
-              );
-            },
-            icon: const Icon(Icons.logout),
-            label: const Text('Sign Out'),
-          ),
-        ],
+      appBar: AppBar(title: const Text('Profile')),
+      body: userProfileAsync.when(
+        data: (profile) => ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            _buildProfileHeader(context, profile),
+            const SizedBox(height: 16),
+            _buildBusinessDetails(context, profile),
+            const SizedBox(height: 16),
+            _buildNotificationSettings(context, profile),
+            _buildTargets(context, profile),
+            const SizedBox(height: 32),
+            OutlinedButton.icon(
+              onPressed: () async {
+                final navigator = Navigator.of(context);
+                await ref.read(authServiceProvider).signOut();
+                if (!mounted) return;
+                navigator.pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                  (route) => false,
+                );
+              },
+              icon: const Icon(Icons.logout),
+              label: const Text('Sign Out'),
+            ),
+          ],
+        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Error: $err')),
       ),
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context) {
+  Widget _buildProfileHeader(BuildContext context, UserProfile profile) {
+    final user = ref.watch(currentUserProvider);
+    final fullName = user?.displayName ?? 'User';
+    final email = user?.email ?? '';
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -71,27 +67,31 @@ class _ProfilePageState extends State<ProfilePage> {
             CircleAvatar(
               radius: 36,
               backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-              child: Text(
-                _fullName.isNotEmpty ? _fullName.characters.first : '?',
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineMedium
-                    ?.copyWith(color: Theme.of(context).colorScheme.primary),
-              ),
+              backgroundImage: user?.photoUrl != null
+                  ? NetworkImage(user!.photoUrl!)
+                  : null,
+              child: user?.photoUrl == null
+                  ? Text(
+                      fullName.isNotEmpty ? fullName.characters.first : '?',
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                    )
+                  : null,
             ),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    _fullName,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
+                  Text(fullName, style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: 4),
                   Text(
-                    _email,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                    email,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 12),
                   Wrap(
@@ -100,34 +100,35 @@ class _ProfilePageState extends State<ProfilePage> {
                     children: [
                       _ProfileChip(
                         label: 'Business',
-                        value: _businessName,
-                        onTap: () => _editField('Business Name', _businessName, (value) {
-                          setState(() {
-                            _businessName = value;
-                          });
-                        }),
+                        value: profile.businessName.isNotEmpty
+                            ? profile.businessName
+                            : 'Enter Business Name',
+                        isPlaceholder: profile.businessName.isEmpty,
+                        onTap: () => _editField(
+                          'Business Name',
+                          profile.businessName,
+                          (value) => _updateProfile(
+                            profile.copyWith(businessName: value),
+                          ),
+                        ),
                       ),
                       _ProfileChip(
                         label: 'Industry',
-                        value: _industry,
-                        onTap: () => _editField('Industry', _industry, (value) {
-                          setState(() {
-                            _industry = value;
-                          });
-                        }),
+                        value: profile.industry.isNotEmpty
+                            ? profile.industry
+                            : 'Select Industry',
+                        isPlaceholder: profile.industry.isEmpty,
+                        onTap: () => _editField(
+                          'Industry',
+                          profile.industry,
+                          (value) =>
+                              _updateProfile(profile.copyWith(industry: value)),
+                        ),
                       ),
                     ],
                   ),
                 ],
               ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () => _editField('Full Name', _fullName, (value) {
-                setState(() {
-                  _fullName = value;
-                });
-              }),
             ),
           ],
         ),
@@ -135,63 +136,81 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildBusinessDetails(BuildContext context) {
+  Widget _buildBusinessDetails(BuildContext context, UserProfile profile) {
+    final user = ref.watch(currentUserProvider);
     return Card(
       child: Column(
         children: [
           ListTile(
             leading: const Icon(Icons.email_outlined),
             title: const Text('Email Address'),
-            subtitle: Text(_email),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => _editField('Email Address', _email, (value) {
-              setState(() {
-                _email = value;
-              });
-            }),
+            subtitle: Text(user?.email ?? ''),
+            // Email is managed by Auth, not editable here easily without re-auth
           ),
           const Divider(height: 0),
           ListTile(
             leading: const Icon(Icons.attach_money),
             title: const Text('Preferred Currency'),
-            subtitle: Text(_preferredCurrency),
+            subtitle: Text(profile.preferredCurrency),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => _editField('Preferred Currency', _preferredCurrency, (value) {
-              setState(() {
-                _preferredCurrency = value.toUpperCase();
-              });
-            }),
+            onTap: () => _editField(
+              'Preferred Currency',
+              profile.preferredCurrency,
+              (value) => _updateProfile(
+                profile.copyWith(preferredCurrency: value.toUpperCase()),
+              ),
+            ),
           ),
           const Divider(height: 0),
           ListTile(
             leading: const Icon(Icons.badge),
             title: const Text('Business Name'),
-            subtitle: Text(_businessName),
+            subtitle: Text(
+              profile.businessName.isNotEmpty
+                  ? profile.businessName
+                  : 'Enter Business Name',
+              style: profile.businessName.isEmpty
+                  ? const TextStyle(
+                      color: Colors.grey,
+                      fontStyle: FontStyle.italic,
+                    )
+                  : null,
+            ),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => _editField('Business Name', _businessName, (value) {
-              setState(() {
-                _businessName = value;
-              });
-            }),
+            onTap: () => _editField(
+              'Business Name',
+              profile.businessName,
+              (value) => _updateProfile(profile.copyWith(businessName: value)),
+            ),
           ),
           const Divider(height: 0),
           ListTile(
             leading: const Icon(Icons.work_outline),
             title: const Text('Industry'),
-            subtitle: Text(_industry),
+            subtitle: Text(
+              profile.industry.isNotEmpty
+                  ? profile.industry
+                  : 'Select Industry',
+              style: profile.industry.isEmpty
+                  ? const TextStyle(
+                      color: Colors.grey,
+                      fontStyle: FontStyle.italic,
+                    )
+                  : null,
+            ),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => _editField('Industry', _industry, (value) {
-              setState(() {
-                _industry = value;
-              });
-            }),
+            onTap: () => _editField(
+              'Industry',
+              profile.industry,
+              (value) => _updateProfile(profile.copyWith(industry: value)),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildNotificationSettings(BuildContext context) {
+  Widget _buildNotificationSettings(BuildContext context, UserProfile profile) {
     return Card(
       child: Column(
         children: [
@@ -201,33 +220,27 @@ class _ProfilePageState extends State<ProfilePage> {
             subtitle: const Text('Manage how you stay informed'),
           ),
           SwitchListTile(
-            value: _emailNotifications,
+            value: profile.emailNotifications,
             title: const Text('Email Alerts'),
-            subtitle: const Text('Monthly statements, alerts and feature updates'),
-            onChanged: (value) {
-              setState(() {
-                _emailNotifications = value;
-              });
-            },
+            subtitle: const Text(
+              'Monthly statements, alerts and feature updates',
+            ),
+            onChanged: (value) =>
+                _updateProfile(profile.copyWith(emailNotifications: value)),
           ),
           SwitchListTile(
-            value: _smsNotifications,
+            value: profile.smsNotifications,
             title: const Text('SMS Notifications'),
             subtitle: const Text('Critical account activity only'),
-            onChanged: (value) {
-              setState(() {
-                _smsNotifications = value;
-              });
-            },
+            onChanged: (value) =>
+                _updateProfile(profile.copyWith(smsNotifications: value)),
           ),
         ],
       ),
     );
   }
 
-  
-
-  Widget _buildTargets(BuildContext context) {
+  Widget _buildTargets(BuildContext context, UserProfile profile) {
     return Card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -243,31 +256,33 @@ class _ProfilePageState extends State<ProfilePage> {
               children: [
                 _TargetTile(
                   label: 'Revenue Target',
-                  value: _currency.format(_monthlyRevenueTarget),
+                  value: profile.monthlyRevenueTarget > 0
+                      ? _currency.format(profile.monthlyRevenueTarget)
+                      : 'Set Target',
+                  isPlaceholder: profile.monthlyRevenueTarget == 0,
                   onTap: () => _editNumericField(
                     context,
                     title: 'Revenue Target',
-                    initialValue: _monthlyRevenueTarget,
-                    onChanged: (value) {
-                      setState(() {
-                        _monthlyRevenueTarget = value;
-                      });
-                    },
+                    initialValue: profile.monthlyRevenueTarget,
+                    onChanged: (value) => _updateProfile(
+                      profile.copyWith(monthlyRevenueTarget: value),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
                 _TargetTile(
                   label: 'Expense Cap',
-                  value: _currency.format(_monthlyExpenseCap),
+                  value: profile.monthlyExpenseCap > 0
+                      ? _currency.format(profile.monthlyExpenseCap)
+                      : 'Set Cap',
+                  isPlaceholder: profile.monthlyExpenseCap == 0,
                   onTap: () => _editNumericField(
                     context,
                     title: 'Expense Cap',
-                    initialValue: _monthlyExpenseCap,
-                    onChanged: (value) {
-                      setState(() {
-                        _monthlyExpenseCap = value;
-                      });
-                    },
+                    initialValue: profile.monthlyExpenseCap,
+                    onChanged: (value) => _updateProfile(
+                      profile.copyWith(monthlyExpenseCap: value),
+                    ),
                   ),
                 ),
               ],
@@ -278,7 +293,23 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  void _editField(String title, String initialValue, ValueChanged<String> onChanged) {
+  Future<void> _updateProfile(UserProfile updatedProfile) async {
+    try {
+      await ref.read(userRepositoryProvider).updateUserProfile(updatedProfile);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error updating profile: $e')));
+      }
+    }
+  }
+
+  void _editField(
+    String title,
+    String initialValue,
+    ValueChanged<String> onChanged,
+  ) {
     final controller = TextEditingController(text: initialValue);
     showDialog<void>(
       context: context,
@@ -288,9 +319,7 @@ class _ProfilePageState extends State<ProfilePage> {
           content: TextField(
             controller: controller,
             autofocus: true,
-            decoration: InputDecoration(
-              hintText: title,
-            ),
+            decoration: InputDecoration(hintText: title),
           ),
           actions: [
             TextButton(
@@ -316,7 +345,9 @@ class _ProfilePageState extends State<ProfilePage> {
     required double initialValue,
     required ValueChanged<double> onChanged,
   }) {
-    final controller = TextEditingController(text: initialValue.toStringAsFixed(2));
+    final controller = TextEditingController(
+      text: initialValue > 0 ? initialValue.toStringAsFixed(2) : '',
+    );
     showDialog<void>(
       context: context,
       builder: (context) {
@@ -326,9 +357,7 @@ class _ProfilePageState extends State<ProfilePage> {
             controller: controller,
             autofocus: true,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(
-              prefixText: '\$',
-            ),
+            decoration: const InputDecoration(prefixText: '\$'),
           ),
           actions: [
             TextButton(
@@ -337,7 +366,9 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             FilledButton(
               onPressed: () {
-                final value = double.tryParse(controller.text.replaceAll(',', ''));
+                final value = double.tryParse(
+                  controller.text.replaceAll(',', ''),
+                );
                 if (value != null) {
                   onChanged(value);
                   Navigator.of(context).pop();
@@ -356,11 +387,13 @@ class _ProfileChip extends StatelessWidget {
   final String label;
   final String value;
   final VoidCallback onTap;
+  final bool isPlaceholder;
 
   const _ProfileChip({
     required this.label,
     required this.value,
     required this.onTap,
+    this.isPlaceholder = false,
   });
 
   @override
@@ -372,11 +405,16 @@ class _ProfileChip extends StatelessWidget {
         children: [
           Text(
             label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.grey[600]),
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(color: Colors.grey[600]),
           ),
           Text(
             value,
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: isPlaceholder ? Colors.grey : null,
+              fontStyle: isPlaceholder ? FontStyle.italic : null,
+            ),
           ),
         ],
       ),
@@ -389,11 +427,13 @@ class _TargetTile extends StatelessWidget {
   final String label;
   final String value;
   final VoidCallback onTap;
+  final bool isPlaceholder;
 
   const _TargetTile({
     required this.label,
     required this.value,
     required this.onTap,
+    this.isPlaceholder = false,
   });
 
   @override
@@ -414,14 +454,14 @@ class _TargetTile extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: Theme.of(context).textTheme.labelMedium,
-                ),
+                Text(label, style: Theme.of(context).textTheme.labelMedium),
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: Theme.of(context).textTheme.titleMedium,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: isPlaceholder ? Colors.grey : null,
+                    fontStyle: isPlaceholder ? FontStyle.italic : null,
+                  ),
                 ),
               ],
             ),

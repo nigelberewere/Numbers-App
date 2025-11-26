@@ -2,19 +2,22 @@ import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../models/recommendation.dart';
 import '../services/gemini_service.dart';
-import '../services/mock_transaction_repository.dart';
+import '../services/transaction_repository.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers.dart';
 
-class SmartRecommendationsPage extends StatefulWidget {
+class SmartRecommendationsPage extends ConsumerStatefulWidget {
   const SmartRecommendationsPage({super.key});
 
   @override
-  State<SmartRecommendationsPage> createState() =>
+  ConsumerState<SmartRecommendationsPage> createState() =>
       _SmartRecommendationsPageState();
 }
 
-class _SmartRecommendationsPageState extends State<SmartRecommendationsPage> {
-  final _geminiService = GeminiService();
-  final _repository = MockTransactionRepository();
+class _SmartRecommendationsPageState
+    extends ConsumerState<SmartRecommendationsPage> {
+  late final GeminiService _geminiService;
+  late final TransactionRepository _repository;
 
   List<Recommendation> _recommendations = [];
   List<Transaction> _transactions = [];
@@ -28,6 +31,8 @@ class _SmartRecommendationsPageState extends State<SmartRecommendationsPage> {
   @override
   void initState() {
     super.initState();
+    _geminiService = ref.read(geminiServiceProvider);
+    _repository = ref.read(transactionRepositoryProvider);
     _loadTransactionSummary();
   }
 

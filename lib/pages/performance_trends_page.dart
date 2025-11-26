@@ -4,21 +4,23 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../models/models.dart';
-import '../services/mock_transaction_repository.dart';
 import '../services/transaction_repository.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers.dart';
 import '../widgets/income_expense_line_chart.dart';
 import '../widgets/monthly_comparison_bar_chart.dart';
 
-class PerformanceTrendsPage extends StatefulWidget {
+class PerformanceTrendsPage extends ConsumerStatefulWidget {
   final TransactionRepository? repository;
 
   const PerformanceTrendsPage({super.key, this.repository});
 
   @override
-  State<PerformanceTrendsPage> createState() => _PerformanceTrendsPageState();
+  ConsumerState<PerformanceTrendsPage> createState() =>
+      _PerformanceTrendsPageState();
 }
 
-class _PerformanceTrendsPageState extends State<PerformanceTrendsPage> {
+class _PerformanceTrendsPageState extends ConsumerState<PerformanceTrendsPage> {
   late final TransactionRepository _repository;
   final NumberFormat _currency = NumberFormat.currency(symbol: '\$');
   final DateFormat _monthFormat = DateFormat.yMMM();
@@ -32,7 +34,7 @@ class _PerformanceTrendsPageState extends State<PerformanceTrendsPage> {
   @override
   void initState() {
     super.initState();
-    _repository = widget.repository ?? MockTransactionRepository();
+    _repository = widget.repository ?? ref.read(transactionRepositoryProvider);
     _loadData();
   }
 
@@ -74,8 +76,8 @@ class _PerformanceTrendsPageState extends State<PerformanceTrendsPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _buildErrorState()
-              : _buildContent(),
+          ? _buildErrorState()
+          : _buildContent(),
     );
   }
 
@@ -123,7 +125,10 @@ class _PerformanceTrendsPageState extends State<PerformanceTrendsPage> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Income vs Expense Trend', style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'Income vs Expense Trend',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 8),
                     Align(
                       alignment: Alignment.centerRight,
@@ -131,10 +136,22 @@ class _PerformanceTrendsPageState extends State<PerformanceTrendsPage> {
                         scrollDirection: Axis.horizontal,
                         child: SegmentedButton<DateRange>(
                           segments: const [
-                            ButtonSegment(value: DateRange.week, label: Text('Week')),
-                            ButtonSegment(value: DateRange.month, label: Text('Month')),
-                            ButtonSegment(value: DateRange.quarter, label: Text('Quarter')),
-                            ButtonSegment(value: DateRange.year, label: Text('Year')),
+                            ButtonSegment(
+                              value: DateRange.week,
+                              label: Text('Week'),
+                            ),
+                            ButtonSegment(
+                              value: DateRange.month,
+                              label: Text('Month'),
+                            ),
+                            ButtonSegment(
+                              value: DateRange.quarter,
+                              label: Text('Quarter'),
+                            ),
+                            ButtonSegment(
+                              value: DateRange.year,
+                              label: Text('Year'),
+                            ),
                           ],
                           selected: {_selectedRange},
                           onSelectionChanged: (selection) {
@@ -196,30 +213,32 @@ class _PerformanceTrendsPageState extends State<PerformanceTrendsPage> {
       spacing: 12,
       runSpacing: 12,
       children: cards
-          .map((card) => SizedBox(
-                width: math.min(MediaQuery.of(context).size.width - 32, 280.0),
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(card.icon, color: card.color, size: 28),
-                        const SizedBox(height: 12),
-                        Text(
-                          card.value,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge
-                              ?.copyWith(color: card.color, fontWeight: FontWeight.w600),
+          .map(
+            (card) => SizedBox(
+              width: math.min(MediaQuery.of(context).size.width - 32, 280.0),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(card.icon, color: card.color, size: 28),
+                      const SizedBox(height: 12),
+                      Text(
+                        card.value,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: card.color,
+                          fontWeight: FontWeight.w600,
                         ),
-                        const SizedBox(height: 4),
-                        Text(card.label),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(card.label),
+                    ],
                   ),
                 ),
-              ))
+              ),
+            ),
+          )
           .toList(),
     );
   }
@@ -229,8 +248,7 @@ class _PerformanceTrendsPageState extends State<PerformanceTrendsPage> {
       'Average monthly income ${_currency.format(snapshot.averageMonthlyIncome)}',
       'Average monthly expenses ${_currency.format(snapshot.averageMonthlyExpense)}',
       'Average monthly net ${_currency.format(snapshot.averageMonthlyNet)}',
-      if (snapshot.trendDirectionLabel.isNotEmpty)
-        snapshot.trendDirectionLabel,
+      if (snapshot.trendDirectionLabel.isNotEmpty) snapshot.trendDirectionLabel,
     ];
 
     return Card(
@@ -239,7 +257,10 @@ class _PerformanceTrendsPageState extends State<PerformanceTrendsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Trend Highlights', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Trend Highlights',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 12),
             for (final item in highlights)
               Padding(
@@ -264,7 +285,9 @@ class _PerformanceTrendsPageState extends State<PerformanceTrendsPage> {
       return Card(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Text('Monthly breakdown will appear once enough data is recorded.'),
+          child: Text(
+            'Monthly breakdown will appear once enough data is recorded.',
+          ),
         ),
       );
     }
@@ -275,12 +298,17 @@ class _PerformanceTrendsPageState extends State<PerformanceTrendsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Monthly Breakdown', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Monthly Breakdown',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 12),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: ConstrainedBox(
-                constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width),
+                constraints: BoxConstraints(
+                  minWidth: MediaQuery.of(context).size.width,
+                ),
                 child: DataTable(
                   headingRowHeight: 36,
                   dataRowMinHeight: 32,
@@ -292,18 +320,26 @@ class _PerformanceTrendsPageState extends State<PerformanceTrendsPage> {
                     DataColumn(label: Text('Net')),
                   ],
                   rows: rows
-                      .map((row) => DataRow(cells: [
+                      .map(
+                        (row) => DataRow(
+                          cells: [
                             DataCell(Text(_monthFormat.format(row.month))),
                             DataCell(Text(_currency.format(row.income))),
                             DataCell(Text(_currency.format(row.expenses))),
-                            DataCell(Text(
-                              _currency.format(row.net),
-                              style: TextStyle(
-                                color: row.net >= 0 ? Colors.green : Colors.red,
-                                fontWeight: FontWeight.w600,
+                            DataCell(
+                              Text(
+                                _currency.format(row.net),
+                                style: TextStyle(
+                                  color: row.net >= 0
+                                      ? Colors.green
+                                      : Colors.red,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
-                            )),
-                          ]))
+                            ),
+                          ],
+                        ),
+                      )
                       .toList(),
                 ),
               ),
@@ -342,7 +378,9 @@ class PerformanceTrendsSnapshot {
     required this.trendDirectionLabel,
   });
 
-  factory PerformanceTrendsSnapshot.fromTransactions(List<Transaction> transactions) {
+  factory PerformanceTrendsSnapshot.fromTransactions(
+    List<Transaction> transactions,
+  ) {
     const monthsToShow = 6;
     final now = DateTime.now();
     final monthlyMap = <String, MonthlyTrend>{};
@@ -385,19 +423,27 @@ class PerformanceTrendsSnapshot {
     }
 
     final currentMonth = monthlyTrends.isNotEmpty ? monthlyTrends.last : null;
-    final previousMonth = monthlyTrends.length > 1 ? monthlyTrends[monthlyTrends.length - 2] : null;
+    final previousMonth = monthlyTrends.length > 1
+        ? monthlyTrends[monthlyTrends.length - 2]
+        : null;
     final monthOverMonthChange = currentMonth != null && previousMonth != null
         ? currentMonth.net - previousMonth.net
         : 0.0;
 
     final averageIncome = monthlyTrends.isNotEmpty
-        ? monthlyTrends.fold<double>(0.0, (sum, trend) => sum + trend.income) / monthlyTrends.length
+        ? monthlyTrends.fold<double>(0.0, (sum, trend) => sum + trend.income) /
+              monthlyTrends.length
         : 0.0;
     final averageExpense = monthlyTrends.isNotEmpty
-        ? monthlyTrends.fold<double>(0.0, (sum, trend) => sum + trend.expenses) / monthlyTrends.length
+        ? monthlyTrends.fold<double>(
+                0.0,
+                (sum, trend) => sum + trend.expenses,
+              ) /
+              monthlyTrends.length
         : 0.0;
     final averageNet = monthlyTrends.isNotEmpty
-        ? monthlyTrends.fold<double>(0.0, (sum, trend) => sum + trend.net) / monthlyTrends.length
+        ? monthlyTrends.fold<double>(0.0, (sum, trend) => sum + trend.net) /
+              monthlyTrends.length
         : 0.0;
 
     String trendDirectionLabel = '';
@@ -405,7 +451,9 @@ class PerformanceTrendsSnapshot {
       final percentChange = previousMonth.net == 0
           ? null
           : ((currentMonth.net - previousMonth.net) / previousMonth.net) * 100;
-      final direction = currentMonth.net >= previousMonth.net ? 'improved' : 'declined';
+      final direction = currentMonth.net >= previousMonth.net
+          ? 'improved'
+          : 'declined';
       final changeText = percentChange == null
           ? _formatAmountChange(currentMonth.net - previousMonth.net)
           : '${percentChange.toStringAsFixed(1)}%';

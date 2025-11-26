@@ -4,19 +4,20 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../models/models.dart';
-import '../services/mock_transaction_repository.dart';
 import '../services/transaction_repository.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers.dart';
 
-class CashFlowPage extends StatefulWidget {
+class CashFlowPage extends ConsumerStatefulWidget {
   final TransactionRepository? repository;
 
   const CashFlowPage({super.key, this.repository});
 
   @override
-  State<CashFlowPage> createState() => _CashFlowPageState();
+  ConsumerState<CashFlowPage> createState() => _CashFlowPageState();
 }
 
-class _CashFlowPageState extends State<CashFlowPage> {
+class _CashFlowPageState extends ConsumerState<CashFlowPage> {
   late final TransactionRepository _repository;
   final NumberFormat _currency = NumberFormat.currency(symbol: '\$');
 
@@ -28,7 +29,7 @@ class _CashFlowPageState extends State<CashFlowPage> {
   @override
   void initState() {
     super.initState();
-    _repository = widget.repository ?? MockTransactionRepository();
+    _repository = widget.repository ?? ref.read(transactionRepositoryProvider);
     _loadData();
   }
 
@@ -73,8 +74,8 @@ class _CashFlowPageState extends State<CashFlowPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _buildErrorState()
-              : _buildContent(),
+          ? _buildErrorState()
+          : _buildContent(),
     );
   }
 
@@ -87,10 +88,7 @@ class _CashFlowPageState extends State<CashFlowPage> {
           const SizedBox(height: 16),
           Text(_error ?? 'Unknown error', textAlign: TextAlign.center),
           const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _loadData,
-            child: const Text('Retry'),
-          ),
+          ElevatedButton(onPressed: _loadData, child: const Text('Retry')),
         ],
       ),
     );
@@ -154,10 +152,9 @@ class _CashFlowPageState extends State<CashFlowPage> {
               const SizedBox(height: 8),
               Text(
                 _currency.format(value),
-                style: Theme.of(context)
-                    .textTheme
-                    .titleLarge
-                    ?.copyWith(color: _valueColor(value)),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(color: _valueColor(value)),
               ),
             ],
           ),
@@ -166,7 +163,10 @@ class _CashFlowPageState extends State<CashFlowPage> {
     );
   }
 
-  Widget _buildPeriodBanner(FinancialSummary summary, CashFlowSnapshot snapshot) {
+  Widget _buildPeriodBanner(
+    FinancialSummary summary,
+    CashFlowSnapshot snapshot,
+  ) {
     final dateFormatter = DateFormat.yMMMMd();
     return Card(
       color: Theme.of(context).colorScheme.primaryContainer,
@@ -175,7 +175,10 @@ class _CashFlowPageState extends State<CashFlowPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Reporting period', style: Theme.of(context).textTheme.titleSmall),
+            Text(
+              'Reporting period',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
             const SizedBox(height: 4),
             Text(
               '${dateFormatter.format(summary.periodStart)} — ${dateFormatter.format(summary.periodEnd)}',
@@ -188,18 +191,16 @@ class _CashFlowPageState extends State<CashFlowPage> {
             ),
             Text(
               'Closing cash: ${_currency.format(snapshot.closingCash)}',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Text(
               'Net change in cash: ${_currency.format(snapshot.netChange)}',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: _valueColor(snapshot.netChange)),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: _valueColor(snapshot.netChange),
+              ),
             ),
           ],
         ),
@@ -239,7 +240,11 @@ class _CashFlowPageState extends State<CashFlowPage> {
             for (final entry in items.entries)
               _buildLineItem(entry.key, entry.value, isNet: false),
             const Divider(height: 24),
-            _buildLineItem('Net cash from $title'.toLowerCase(), netValue, isNet: true),
+            _buildLineItem(
+              'Net cash from $title'.toLowerCase(),
+              netValue,
+              isNet: true,
+            ),
           ],
         ),
       ),
@@ -280,12 +285,17 @@ class _CashFlowPageState extends State<CashFlowPage> {
       return Card(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Text('Monthly cash trends will appear once transactions are recorded.'),
+          child: Text(
+            'Monthly cash trends will appear once transactions are recorded.',
+          ),
         ),
       );
     }
 
-    final maxAbs = trends.fold<double>(0, (current, point) => math.max(current, point.netTotal.abs()));
+    final maxAbs = trends.fold<double>(
+      0,
+      (current, point) => math.max(current, point.netTotal.abs()),
+    );
 
     return Card(
       child: Padding(
@@ -293,7 +303,10 @@ class _CashFlowPageState extends State<CashFlowPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Monthly net cash trend', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Monthly net cash trend',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 12),
             for (final point in trends)
               _buildTrendRow(point, maxAbs == 0 ? 1 : maxAbs),
@@ -305,7 +318,7 @@ class _CashFlowPageState extends State<CashFlowPage> {
 
   Widget _buildTrendRow(CashFlowTrendPoint point, double maxAbs) {
     final dateLabel = DateFormat.yMMM().format(point.month);
-  final normalized = (point.netTotal.abs() / maxAbs).clamp(0, 1).toDouble();
+    final normalized = (point.netTotal.abs() / maxAbs).clamp(0, 1).toDouble();
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -331,7 +344,9 @@ class _CashFlowPageState extends State<CashFlowPage> {
               value: normalized,
               minHeight: 6,
               backgroundColor: Colors.grey[200],
-              valueColor: AlwaysStoppedAnimation<Color>(_valueColor(point.netTotal)),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                _valueColor(point.netTotal),
+              ),
             ),
           ),
         ],
@@ -378,42 +393,32 @@ class CashFlowSnapshot {
     double sumFor(Set<TransactionCategory> categories, TransactionType type) {
       return transactions
           .where((t) => categories.contains(t.category) && t.type == type)
-        .fold<double>(0.0, (sum, t) => sum + t.amount);
+          .fold<double>(0.0, (sum, t) => sum + t.amount);
     }
 
     // Heuristic grouping tailored to the mock dataset. Adjust when the backend lands.
-    final operatingIncome = sumFor(
-      {
-        TransactionCategory.sales,
-        TransactionCategory.harvest,
-        TransactionCategory.livestock,
-        TransactionCategory.trading,
-      },
-      TransactionType.income,
-    );
+    final operatingIncome = sumFor({
+      TransactionCategory.sales,
+      TransactionCategory.harvest,
+      TransactionCategory.livestock,
+      TransactionCategory.trading,
+    }, TransactionType.income);
 
-    final inputExpenses = sumFor(
-      {
-        TransactionCategory.feed,
-        TransactionCategory.fertilizer,
-        TransactionCategory.seeds,
-      },
-      TransactionType.expense,
-    );
+    final inputExpenses = sumFor({
+      TransactionCategory.feed,
+      TransactionCategory.fertilizer,
+      TransactionCategory.seeds,
+    }, TransactionType.expense);
 
-    final laborExpenses = sumFor(
-      {TransactionCategory.labor},
-      TransactionType.expense,
-    );
+    final laborExpenses = sumFor({
+      TransactionCategory.labor,
+    }, TransactionType.expense);
 
-    final overheadExpenses = sumFor(
-      {
-        TransactionCategory.transport,
-        TransactionCategory.utilities,
-        TransactionCategory.other,
-      },
-      TransactionType.expense,
-    );
+    final overheadExpenses = sumFor({
+      TransactionCategory.transport,
+      TransactionCategory.utilities,
+      TransactionCategory.other,
+    }, TransactionType.expense);
 
     final operatingOutflows = inputExpenses + laborExpenses + overheadExpenses;
 
@@ -424,36 +429,40 @@ class CashFlowSnapshot {
       if (overheadExpenses > 0) 'Cash paid for overheads': -overheadExpenses,
     };
 
-    final equipmentInvestments = sumFor(
-      {TransactionCategory.equipment},
-      TransactionType.expense,
-    );
+    final equipmentInvestments = sumFor({
+      TransactionCategory.equipment,
+    }, TransactionType.expense);
 
-    final landImprovements = (sumFor({TransactionCategory.seeds}, TransactionType.expense) * 0.15) +
-        (sumFor({TransactionCategory.fertilizer}, TransactionType.expense) * 0.2);
+    final landImprovements =
+        (sumFor({TransactionCategory.seeds}, TransactionType.expense) * 0.15) +
+        (sumFor({TransactionCategory.fertilizer}, TransactionType.expense) *
+            0.2);
 
     final investingBreakdown = <String, double>{
-      if (equipmentInvestments > 0) 'Farm equipment purchases': -equipmentInvestments,
+      if (equipmentInvestments > 0)
+        'Farm equipment purchases': -equipmentInvestments,
       if (landImprovements > 0) 'Land development spends': -landImprovements,
     };
 
-    final financingInflows = sumFor(
-      {TransactionCategory.other},
-      TransactionType.income,
-    );
+    final financingInflows = sumFor({
+      TransactionCategory.other,
+    }, TransactionType.income);
 
-    final financingOutflows = sumFor(
-      {TransactionCategory.other},
-      TransactionType.expense,
-    );
+    final financingOutflows = sumFor({
+      TransactionCategory.other,
+    }, TransactionType.expense);
 
     final financingBreakdown = <String, double>{
       if (financingInflows > 0) 'Capital contributions': financingInflows,
-      if (financingOutflows > 0) 'Loan repayments and draws': -financingOutflows,
+      if (financingOutflows > 0)
+        'Loan repayments and draws': -financingOutflows,
     };
 
     final operatingNet = operatingIncome - operatingOutflows;
-  final investingNet = investingBreakdown.values.fold<double>(0.0, (sum, value) => sum + value);
+    final investingNet = investingBreakdown.values.fold<double>(
+      0.0,
+      (sum, value) => sum + value,
+    );
 
     final financingNet = financingInflows - financingOutflows;
     final netChange = operatingNet + investingNet + financingNet;
@@ -465,13 +474,18 @@ class CashFlowSnapshot {
     for (final transaction in transactions) {
       final key = DateTime(transaction.date.year, transaction.date.month);
       final sign = transaction.type == TransactionType.income ? 1 : -1;
-  monthTotals[key] = monthTotals.putIfAbsent(key, () => 0.0) + (transaction.amount * sign);
+      monthTotals[key] =
+          monthTotals.putIfAbsent(key, () => 0.0) + (transaction.amount * sign);
     }
 
-    final trends = monthTotals.entries
-        .map((entry) => CashFlowTrendPoint(month: entry.key, netTotal: entry.value))
-        .toList()
-      ..sort((a, b) => a.month.compareTo(b.month));
+    final trends =
+        monthTotals.entries
+            .map(
+              (entry) =>
+                  CashFlowTrendPoint(month: entry.key, netTotal: entry.value),
+            )
+            .toList()
+          ..sort((a, b) => a.month.compareTo(b.month));
 
     return CashFlowSnapshot(
       operatingBreakdown: operatingBreakdown,

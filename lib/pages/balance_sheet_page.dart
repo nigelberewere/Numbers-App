@@ -4,19 +4,20 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../models/models.dart';
-import '../services/mock_transaction_repository.dart';
 import '../services/transaction_repository.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers.dart';
 
-class BalanceSheetPage extends StatefulWidget {
+class BalanceSheetPage extends ConsumerStatefulWidget {
   final TransactionRepository? repository;
 
   const BalanceSheetPage({super.key, this.repository});
 
   @override
-  State<BalanceSheetPage> createState() => _BalanceSheetPageState();
+  ConsumerState<BalanceSheetPage> createState() => _BalanceSheetPageState();
 }
 
-class _BalanceSheetPageState extends State<BalanceSheetPage> {
+class _BalanceSheetPageState extends ConsumerState<BalanceSheetPage> {
   late final TransactionRepository _repository;
   final NumberFormat _currency = NumberFormat.currency(symbol: '\$');
 
@@ -28,7 +29,7 @@ class _BalanceSheetPageState extends State<BalanceSheetPage> {
   @override
   void initState() {
     super.initState();
-    _repository = widget.repository ?? MockTransactionRepository();
+    _repository = widget.repository ?? ref.read(transactionRepositoryProvider);
     _loadData();
   }
 
@@ -41,7 +42,10 @@ class _BalanceSheetPageState extends State<BalanceSheetPage> {
     try {
       final transactions = await _repository.getAllTransactions();
       final summary = await _repository.getFinancialSummary();
-      final snapshot = BalanceSheetSnapshot.fromTransactions(transactions, summary);
+      final snapshot = BalanceSheetSnapshot.fromTransactions(
+        transactions,
+        summary,
+      );
 
       if (!mounted) return;
       setState(() {
@@ -73,8 +77,8 @@ class _BalanceSheetPageState extends State<BalanceSheetPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _buildErrorState()
-              : _buildContent(),
+          ? _buildErrorState()
+          : _buildContent(),
     );
   }
 
@@ -87,10 +91,7 @@ class _BalanceSheetPageState extends State<BalanceSheetPage> {
           const SizedBox(height: 16),
           Text(_error ?? 'Unknown error', textAlign: TextAlign.center),
           const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _loadData,
-            child: const Text('Retry'),
-          ),
+          ElevatedButton(onPressed: _loadData, child: const Text('Retry')),
         ],
       ),
     );
@@ -146,9 +147,24 @@ class _BalanceSheetPageState extends State<BalanceSheetPage> {
       spacing: 12,
       runSpacing: 12,
       children: [
-        _buildSummaryCard('Total Assets', snapshot.totalAssets, Icons.account_balance_wallet, Colors.green),
-        _buildSummaryCard('Total Liabilities', snapshot.totalLiabilities, Icons.receipt_long, Colors.red),
-        _buildSummaryCard('Equity', snapshot.totalEquity, Icons.account_balance, Colors.blue),
+        _buildSummaryCard(
+          'Total Assets',
+          snapshot.totalAssets,
+          Icons.account_balance_wallet,
+          Colors.green,
+        ),
+        _buildSummaryCard(
+          'Total Liabilities',
+          snapshot.totalLiabilities,
+          Icons.receipt_long,
+          Colors.red,
+        ),
+        _buildSummaryCard(
+          'Equity',
+          snapshot.totalEquity,
+          Icons.account_balance,
+          Colors.blue,
+        ),
       ],
     );
   }
@@ -163,7 +179,10 @@ class _BalanceSheetPageState extends State<BalanceSheetPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Reporting period', style: Theme.of(context).textTheme.titleSmall),
+            Text(
+              'Reporting period',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
             const SizedBox(height: 4),
             Text(
               '${dateFormatter.format(summary.periodStart)} — ${dateFormatter.format(summary.periodEnd)}',
@@ -172,7 +191,9 @@ class _BalanceSheetPageState extends State<BalanceSheetPage> {
             const SizedBox(height: 12),
             Text(
               'Net profit for period: ${_currency.format(summary.netProfit)}',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -180,7 +201,12 @@ class _BalanceSheetPageState extends State<BalanceSheetPage> {
     );
   }
 
-  Widget _buildSummaryCard(String title, double value, IconData icon, Color color) {
+  Widget _buildSummaryCard(
+    String title,
+    double value,
+    IconData icon,
+    Color color,
+  ) {
     final availableWidth = MediaQuery.of(context).size.width - 32;
 
     return SizedBox(
@@ -195,7 +221,9 @@ class _BalanceSheetPageState extends State<BalanceSheetPage> {
               const SizedBox(height: 12),
               Text(
                 _currency.format(value),
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(color: color),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(color: color),
               ),
               const SizedBox(height: 4),
               Text(title, style: Theme.of(context).textTheme.bodyMedium),
@@ -221,7 +249,10 @@ class _BalanceSheetPageState extends State<BalanceSheetPage> {
             children: [
               Text(title, style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
-              Text('No data available yet', style: Theme.of(context).textTheme.bodySmall),
+              Text(
+                'No data available yet',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ],
           ),
         ),
@@ -236,7 +267,8 @@ class _BalanceSheetPageState extends State<BalanceSheetPage> {
           children: [
             Text(title, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
-            for (final entry in items.entries) _buildLineItem(entry.key, entry.value, total, accent),
+            for (final entry in items.entries)
+              _buildLineItem(entry.key, entry.value, total, accent),
             const Divider(height: 24),
             _buildLineItem('Subtotal', total, total, accent, isTotal: true),
           ],
@@ -245,8 +277,16 @@ class _BalanceSheetPageState extends State<BalanceSheetPage> {
     );
   }
 
-  Widget _buildLineItem(String label, double value, double total, Color accent, {bool isTotal = false}) {
-  final percentage = total > 0 ? ((value / total * 100).clamp(0, 100)).toDouble() : 0.0;
+  Widget _buildLineItem(
+    String label,
+    double value,
+    double total,
+    Color accent, {
+    bool isTotal = false,
+  }) {
+    final percentage = total > 0
+        ? ((value / total * 100).clamp(0, 100)).toDouble()
+        : 0.0;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -262,13 +302,17 @@ class _BalanceSheetPageState extends State<BalanceSheetPage> {
           ),
           Text(
             '${percentage.toStringAsFixed(1)}%',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: accent),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: accent),
           ),
           const SizedBox(width: 12),
           Text(
             _currency.format(value),
             style: isTotal
-                ? Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)
+                ? Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)
                 : Theme.of(context).textTheme.bodyMedium,
           ),
         ],
@@ -297,10 +341,12 @@ class BalanceSheetSnapshot {
   double get totalCurrentLiabilities => _sum(currentLiabilities);
   double get totalLongTermLiabilities => _sum(longTermLiabilities);
   double get totalAssets => totalCurrentAssets + totalNonCurrentAssets;
-  double get totalLiabilities => totalCurrentLiabilities + totalLongTermLiabilities;
+  double get totalLiabilities =>
+      totalCurrentLiabilities + totalLongTermLiabilities;
   double get totalEquity => _sum(equityBreakdown);
 
-  static double _sum(Map<String, double> values) => values.values.fold(0, (sum, value) => sum + value);
+  static double _sum(Map<String, double> values) =>
+      values.values.fold(0, (sum, value) => sum + value);
 
   factory BalanceSheetSnapshot.fromTransactions(
     List<Transaction> transactions,
@@ -312,17 +358,47 @@ class BalanceSheetSnapshot {
           .fold<double>(0, (sum, t) => sum + t.amount);
     }
 
-    final salesIncome = sumCategory(TransactionCategory.sales, TransactionType.income);
-    final harvestIncome = sumCategory(TransactionCategory.harvest, TransactionType.income);
-    final livestockIncome = sumCategory(TransactionCategory.livestock, TransactionType.income);
+    final salesIncome = sumCategory(
+      TransactionCategory.sales,
+      TransactionType.income,
+    );
+    final harvestIncome = sumCategory(
+      TransactionCategory.harvest,
+      TransactionType.income,
+    );
+    final livestockIncome = sumCategory(
+      TransactionCategory.livestock,
+      TransactionType.income,
+    );
 
-    final feedExpense = sumCategory(TransactionCategory.feed, TransactionType.expense);
-    final fertilizerExpense = sumCategory(TransactionCategory.fertilizer, TransactionType.expense);
-    final seedsExpense = sumCategory(TransactionCategory.seeds, TransactionType.expense);
-    final laborExpense = sumCategory(TransactionCategory.labor, TransactionType.expense);
-    final equipmentExpense = sumCategory(TransactionCategory.equipment, TransactionType.expense);
-    final transportExpense = sumCategory(TransactionCategory.transport, TransactionType.expense);
-    final utilitiesExpense = sumCategory(TransactionCategory.utilities, TransactionType.expense);
+    final feedExpense = sumCategory(
+      TransactionCategory.feed,
+      TransactionType.expense,
+    );
+    final fertilizerExpense = sumCategory(
+      TransactionCategory.fertilizer,
+      TransactionType.expense,
+    );
+    final seedsExpense = sumCategory(
+      TransactionCategory.seeds,
+      TransactionType.expense,
+    );
+    final laborExpense = sumCategory(
+      TransactionCategory.labor,
+      TransactionType.expense,
+    );
+    final equipmentExpense = sumCategory(
+      TransactionCategory.equipment,
+      TransactionType.expense,
+    );
+    final transportExpense = sumCategory(
+      TransactionCategory.transport,
+      TransactionType.expense,
+    );
+    final utilitiesExpense = sumCategory(
+      TransactionCategory.utilities,
+      TransactionType.expense,
+    );
 
     final cashAndEquivalents = math.max(summary.balance, 0.0).toDouble();
     final receivables = salesIncome * 0.18;
@@ -346,9 +422,11 @@ class BalanceSheetSnapshot {
       'Land improvements': landImprovements,
     }..removeWhere((key, value) => value <= 0);
 
-    final accountsPayable = (feedExpense + fertilizerExpense + seedsExpense) * 0.25;
+    final accountsPayable =
+        (feedExpense + fertilizerExpense + seedsExpense) * 0.25;
     final wagesPayable = laborExpense * 0.22;
-    final accruedExpenses = (transportExpense * 0.3) + (utilitiesExpense * 0.45);
+    final accruedExpenses =
+        (transportExpense * 0.3) + (utilitiesExpense * 0.45);
 
     final currentLiabilities = <String, double>{
       'Accounts payable': accountsPayable,
@@ -367,10 +445,15 @@ class BalanceSheetSnapshot {
     }..removeWhere((key, value) => value <= 0);
 
     final totalAssets = _sum(currentAssets) + _sum(nonCurrentAssets);
-    final totalLiabilities = _sum(currentLiabilities) + _sum(longTermLiabilities);
-    final equityValue = math.max(totalAssets - totalLiabilities, 0.0).toDouble();
+    final totalLiabilities =
+        _sum(currentLiabilities) + _sum(longTermLiabilities);
+    final equityValue = math
+        .max(totalAssets - totalLiabilities, 0.0)
+        .toDouble();
 
-    final retainedEarnings = math.max(math.min(summary.netProfit, equityValue), 0.0).toDouble();
+    final retainedEarnings = math
+        .max(math.min(summary.netProfit, equityValue), 0.0)
+        .toDouble();
     final baseEquity = math.max(equityValue - retainedEarnings, 0.0).toDouble();
     final ownerCapital = baseEquity * 0.8;
     final reserves = baseEquity - ownerCapital;

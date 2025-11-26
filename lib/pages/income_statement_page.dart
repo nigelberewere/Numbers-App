@@ -4,22 +4,26 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../models/models.dart';
-import '../services/mock_transaction_repository.dart';
 import '../services/transaction_repository.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers.dart';
 
-class IncomeStatementPage extends StatefulWidget {
+class IncomeStatementPage extends ConsumerStatefulWidget {
   final TransactionRepository? repository;
 
   const IncomeStatementPage({super.key, this.repository});
 
   @override
-  State<IncomeStatementPage> createState() => _IncomeStatementPageState();
+  ConsumerState<IncomeStatementPage> createState() =>
+      _IncomeStatementPageState();
 }
 
-class _IncomeStatementPageState extends State<IncomeStatementPage> {
+class _IncomeStatementPageState extends ConsumerState<IncomeStatementPage> {
   late final TransactionRepository _repository;
   final NumberFormat _currency = NumberFormat.currency(symbol: '\$');
-  final NumberFormat _compactCurrency = NumberFormat.compactCurrency(symbol: '\$');
+  final NumberFormat _compactCurrency = NumberFormat.compactCurrency(
+    symbol: '\$',
+  );
 
   bool _isLoading = true;
   String? _error;
@@ -28,7 +32,7 @@ class _IncomeStatementPageState extends State<IncomeStatementPage> {
   @override
   void initState() {
     super.initState();
-    _repository = widget.repository ?? MockTransactionRepository();
+    _repository = widget.repository ?? ref.read(transactionRepositoryProvider);
     _loadData();
   }
 
@@ -69,8 +73,8 @@ class _IncomeStatementPageState extends State<IncomeStatementPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _buildErrorState()
-              : _buildContent(),
+          ? _buildErrorState()
+          : _buildContent(),
     );
   }
 
@@ -96,11 +100,10 @@ class _IncomeStatementPageState extends State<IncomeStatementPage> {
       padding: const EdgeInsets.all(16),
       children: [
         _buildSummaryRow(snapshot),
-        if (snapshot.periodStart != null && snapshot.periodEnd != null)
-          ...[
-            const SizedBox(height: 12),
-            _buildPeriodBanner(snapshot),
-          ],
+        if (snapshot.periodStart != null && snapshot.periodEnd != null) ...[
+          const SizedBox(height: 12),
+          _buildPeriodBanner(snapshot),
+        ],
         const SizedBox(height: 16),
         _buildBreakdownCard(
           title: 'Revenue Breakdown',
@@ -116,9 +119,17 @@ class _IncomeStatementPageState extends State<IncomeStatementPage> {
         const SizedBox(height: 16),
         _buildKeyMetrics(snapshot),
         const SizedBox(height: 16),
-        _buildTopTransactions('Top Income Transactions', snapshot.topIncomeTransactions, Colors.green),
+        _buildTopTransactions(
+          'Top Income Transactions',
+          snapshot.topIncomeTransactions,
+          Colors.green,
+        ),
         const SizedBox(height: 16),
-        _buildTopTransactions('Top Expense Transactions', snapshot.topExpenseTransactions, Colors.red),
+        _buildTopTransactions(
+          'Top Expense Transactions',
+          snapshot.topExpenseTransactions,
+          Colors.red,
+        ),
       ],
     );
   }
@@ -155,28 +166,32 @@ class _IncomeStatementPageState extends State<IncomeStatementPage> {
       spacing: 12,
       runSpacing: 12,
       children: cards
-          .map((info) => SizedBox(
-                width: math.min(MediaQuery.of(context).size.width - 32, 260.0),
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(info.icon, color: info.color, size: 28),
-                        const SizedBox(height: 12),
-                        Text(info.value,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(color: info.color, fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 4),
-                        Text(info.label),
-                      ],
-                    ),
+          .map(
+            (info) => SizedBox(
+              width: math.min(MediaQuery.of(context).size.width - 32, 260.0),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(info.icon, color: info.color, size: 28),
+                      const SizedBox(height: 12),
+                      Text(
+                        info.value,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: info.color,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(info.label),
+                    ],
                   ),
                 ),
-              ))
+              ),
+            ),
+          )
           .toList(),
     );
   }
@@ -191,14 +206,19 @@ class _IncomeStatementPageState extends State<IncomeStatementPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Reporting Period', style: Theme.of(context).textTheme.titleSmall),
+            Text(
+              'Reporting Period',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
             const SizedBox(height: 4),
             Text(
               '${formatter.format(snapshot.periodStart!)} — ${formatter.format(snapshot.periodEnd!)}',
             ),
             const SizedBox(height: 12),
-            Text('Transactions analysed: ${snapshot.transactionCount}',
-                style: Theme.of(context).textTheme.bodyMedium),
+            Text(
+              'Transactions analysed: ${snapshot.transactionCount}',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
           ],
         ),
       ),
@@ -234,8 +254,13 @@ class _IncomeStatementPageState extends State<IncomeStatementPage> {
                       Expanded(child: Text(entry.key)),
                       Text(_formatPercent(share)),
                       const SizedBox(width: 12),
-                      Text(_currency.format(entry.value),
-                          style: TextStyle(color: accent, fontWeight: FontWeight.w600)),
+                      Text(
+                        _currency.format(entry.value),
+                        style: TextStyle(
+                          color: accent,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ),
                 );
@@ -248,11 +273,23 @@ class _IncomeStatementPageState extends State<IncomeStatementPage> {
 
   Widget _buildKeyMetrics(IncomeStatementSnapshot snapshot) {
     final metrics = [
-      _MetricRow('Average revenue per transaction', _currency.format(snapshot.averageRevenuePerTransaction)),
-      _MetricRow('Average expense per transaction', _currency.format(snapshot.averageExpensePerTransaction)),
+      _MetricRow(
+        'Average revenue per transaction',
+        _currency.format(snapshot.averageRevenuePerTransaction),
+      ),
+      _MetricRow(
+        'Average expense per transaction',
+        _currency.format(snapshot.averageExpensePerTransaction),
+      ),
       _MetricRow('Expense ratio', _formatPercent(snapshot.expenseRatio)),
-      _MetricRow('Revenue growth vs prior month', _formatPercent(snapshot.revenueGrowthMoM)),
-      _MetricRow('Expense growth vs prior month', _formatPercent(snapshot.expenseGrowthMoM)),
+      _MetricRow(
+        'Revenue growth vs prior month',
+        _formatPercent(snapshot.revenueGrowthMoM),
+      ),
+      _MetricRow(
+        'Expense growth vs prior month',
+        _formatPercent(snapshot.expenseGrowthMoM),
+      ),
     ];
 
     return Card(
@@ -263,22 +300,31 @@ class _IncomeStatementPageState extends State<IncomeStatementPage> {
           children: [
             Text('Key Metrics', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
-            ...metrics.map((metric) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Row(
-                    children: [
-                      Expanded(child: Text(metric.label)),
-                      Text(metric.value, style: const TextStyle(fontWeight: FontWeight.w600)),
-                    ],
-                  ),
-                )),
+            ...metrics.map(
+              (metric) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  children: [
+                    Expanded(child: Text(metric.label)),
+                    Text(
+                      metric.value,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTopTransactions(String title, List<Transaction> transactions, Color accent) {
+  Widget _buildTopTransactions(
+    String title,
+    List<Transaction> transactions,
+    Color accent,
+  ) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -301,7 +347,10 @@ class _IncomeStatementPageState extends State<IncomeStatementPage> {
                   subtitle: Text(transaction.categoryName),
                   trailing: Text(
                     _compactCurrency.format(transaction.amount),
-                    style: TextStyle(color: accent, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: accent,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 );
               }),
@@ -357,7 +406,9 @@ class IncomeStatementSnapshot {
     required this.transactionCount,
   });
 
-  factory IncomeStatementSnapshot.fromTransactions(List<Transaction> transactions) {
+  factory IncomeStatementSnapshot.fromTransactions(
+    List<Transaction> transactions,
+  ) {
     if (transactions.isEmpty) {
       return IncomeStatementSnapshot(
         totalRevenue: 0.0,
@@ -383,13 +434,20 @@ class IncomeStatementSnapshot {
     final expenses = transactions.where((t) => t.isExpense).toList();
 
     final totalRevenue = incomes.fold<double>(0.0, (sum, t) => sum + t.amount);
-    final totalExpenses = expenses.fold<double>(0.0, (sum, t) => sum + t.amount);
+    final totalExpenses = expenses.fold<double>(
+      0.0,
+      (sum, t) => sum + t.amount,
+    );
     final netProfit = totalRevenue - totalExpenses;
     final profitMargin = totalRevenue > 0 ? netProfit / totalRevenue : 0.0;
     final expenseRatio = totalRevenue > 0 ? totalExpenses / totalRevenue : 0.0;
 
-    final averageRevenue = incomes.isNotEmpty ? totalRevenue / incomes.length : 0.0;
-    final averageExpense = expenses.isNotEmpty ? totalExpenses / expenses.length : 0.0;
+    final averageRevenue = incomes.isNotEmpty
+        ? totalRevenue / incomes.length
+        : 0.0;
+    final averageExpense = expenses.isNotEmpty
+        ? totalExpenses / expenses.length
+        : 0.0;
 
     final revenueByCategory = _groupByCategory(incomes);
     final expenseByCategory = _groupByCategory(expenses);
@@ -399,11 +457,21 @@ class IncomeStatementSnapshot {
     final topExpense = List<Transaction>.from(expenses)
       ..sort((a, b) => b.amount.compareTo(a.amount));
 
-    final periodStart = transactions.map((t) => t.date).reduce((a, b) => a.isBefore(b) ? a : b);
-    final periodEnd = transactions.map((t) => t.date).reduce((a, b) => a.isAfter(b) ? a : b);
+    final periodStart = transactions
+        .map((t) => t.date)
+        .reduce((a, b) => a.isBefore(b) ? a : b);
+    final periodEnd = transactions
+        .map((t) => t.date)
+        .reduce((a, b) => a.isAfter(b) ? a : b);
 
-    final revenueGrowthMoM = _monthOverMonthGrowth(transactions, TransactionType.income);
-    final expenseGrowthMoM = _monthOverMonthGrowth(transactions, TransactionType.expense);
+    final revenueGrowthMoM = _monthOverMonthGrowth(
+      transactions,
+      TransactionType.income,
+    );
+    final expenseGrowthMoM = _monthOverMonthGrowth(
+      transactions,
+      TransactionType.expense,
+    );
 
     return IncomeStatementSnapshot(
       totalRevenue: totalRevenue,
@@ -434,14 +502,22 @@ class IncomeStatementSnapshot {
     return map;
   }
 
-  static double _monthOverMonthGrowth(List<Transaction> transactions, TransactionType type) {
+  static double _monthOverMonthGrowth(
+    List<Transaction> transactions,
+    TransactionType type,
+  ) {
     final now = DateTime.now();
     final currentMonth = DateTime(now.year, now.month, 1);
     final previousMonth = DateTime(now.year, now.month - 1, 1);
 
     double sumForMonth(DateTime month) {
       return transactions
-          .where((t) => t.type == type && t.date.year == month.year && t.date.month == month.month)
+          .where(
+            (t) =>
+                t.type == type &&
+                t.date.year == month.year &&
+                t.date.month == month.month,
+          )
           .fold<double>(0.0, (sum, t) => sum + t.amount);
     }
 

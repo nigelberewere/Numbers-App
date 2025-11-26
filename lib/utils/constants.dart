@@ -22,5 +22,5 @@ class AppConstants {
   static const String dateFormat = 'dd/MM/yyyy';
   static const String dateTimeFormat = 'dd/MM/yyyy HH:mm';
 
-  static const String geminiApiKey = 'AIzaSyC7mPSLOoNAV2S5Fkz1O0KNkEubBNe7Z3o';
+  static const String geminiApiKey = 'gemini_api_key';
 }

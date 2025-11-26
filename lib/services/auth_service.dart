@@ -1,65 +1,103 @@
+import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../models/auth_user.dart';
 
-abstract class AuthService {
-  AuthUser? get currentUser;
+class AuthService {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  Future<AuthUser?> signInWithEmail(String email, String password);
-  Future<AuthUser?> signUpWithEmail(String email, String password);
-  Future<AuthUser?> signInWithGoogle();
-  Future<void> signOut();
+  // Get current user
+  AuthUser? get currentUser => _userFromFirebase(_auth.currentUser);
+
+  // Auth state changes stream
+  Stream<AuthUser?> get authStateChanges =>
+      _auth.authStateChanges().map(_userFromFirebase);
+
+  // Helper to map Firebase User to AuthUser
+  AuthUser? _userFromFirebase(User? user) {
+    if (user == null) return null;
+    return AuthUser(
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      photoUrl: user.photoURL,
+    );
+  }
+
+  // Sign in with email and password
+  Future<AuthUser?> signInWithEmail(String email, String password) async {
+    try {
+      final credential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      return _userFromFirebase(credential.user);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Register with email and password
+  Future<AuthUser?> signUpWithEmail(String email, String password) async {
+    try {
+      final credential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      return _userFromFirebase(credential.user);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Sign out
+  Future<void> signOut() async {
+    await _auth.signOut();
+  }
+
+  // Sign in with Google
+  Future<AuthUser?> signInWithGoogle() async {
+    try {
+      // Trigger the authentication flow
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+
+      if (googleUser == null) {
+        // The user canceled the sign-in
+        return null;
+      }
+
+      // Obtain the auth details from the request
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      // Create a new credential
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // Once signed in, return the UserCredential
+      final UserCredential userCredential = await _auth.signInWithCredential(
+        credential,
+      );
+      return _userFromFirebase(userCredential.user);
+    } catch (e) {
+      debugPrint('Error signing in with Google: $e');
+      if (e.toString().contains('People API')) {
+        debugPrint(
+          '################################################################################',
+        );
+        debugPrint(
+          'ACTION REQUIRED: Enable People API in Google Cloud Console',
+        );
+        debugPrint(
+          'URL: https://console.developers.google.com/apis/api/people.googleapis.com/overview',
+        );
+        debugPrint(
+          '################################################################################',
+        );
+      }
+      return null;
+    }
+  }
 }
-/// Implementation note for integrators
-///
-/// This file defines the `AuthService` interface used by the app. The previous
-/// in-memory demo implementation has been removed to avoid shipping mock data
-/// to backend engineers. Instead, provide a concrete implementation and wire
-/// it into the top-level `authService` variable below.
-///
-/// Example: in your `main()` you can assign a Firebase implementation:
-///
-///   import 'services/auth_service.dart';
-///   import 'services/firebase_auth_service.dart';
-///
-///   void main() async {
-///     WidgetsFlutterBinding.ensureInitialized();
-///     await Firebase.initializeApp();
-///     authService = FirebaseAuthService();
-///     runApp(const MyApp());
-///   }
-
-/// A minimal stub that intentionally throws UnimplementedError for all
-/// operations. Backend engineers should implement the concrete `AuthService`
-/// (for example `FirebaseAuthService`) and set `authService` to that instance
-/// in application startup.
-class AuthServiceStub implements AuthService {
-  AuthServiceStub();
-
-  @override
-  AuthUser? get currentUser => null;
-
-  @override
-  Future<AuthUser?> signInWithEmail(String email, String password) {
-    throw UnimplementedError('signInWithEmail is not implemented. Replace the authService with a real implementation.');
-  }
-
-  @override
-  Future<AuthUser?> signUpWithEmail(String email, String password) {
-    throw UnimplementedError('signUpWithEmail is not implemented. Replace the authService with a real implementation.');
-  }
-
-  @override
-  Future<AuthUser?> signInWithGoogle() {
-    throw UnimplementedError('signInWithGoogle is not implemented. Replace the authService with a real implementation.');
-  }
-
-  @override
-  Future<void> signOut() {
-    throw UnimplementedError('signOut is not implemented. Replace the authService with a real implementation.');
-  }
-}
-
-/// Top-level auth service instance used by the UI.
-///
-/// IMPORTANT: set this to your concrete implementation (e.g. `FirebaseAuthService()`)
-/// during app startup. Leaving the default will throw UnimplementedError at runtime.
-AuthService authService = AuthServiceStub();

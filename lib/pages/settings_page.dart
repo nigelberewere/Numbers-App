@@ -9,23 +9,15 @@ import 'help_support_page.dart';
 import 'profile_page.dart';
 import 'security_page.dart';
 
-class SettingsPage extends StatelessWidget {
-  const SettingsPage({
-    super.key,
-    required this.themeMode,
-    required this.onThemeModeChanged,
-  });
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-  final ThemeMode themeMode;
-  final ValueChanged<ThemeMode> onThemeModeChanged;
+class SettingsPage extends ConsumerWidget {
+  const SettingsPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
+      appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: [
           const Padding(
@@ -44,9 +36,9 @@ class SettingsPage extends StatelessWidget {
             title: const Text('Forex Trading'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ForexPage()),
-              );
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const ForexPage()));
             },
           ),
           ListTile(
@@ -77,9 +69,9 @@ class SettingsPage extends StatelessWidget {
             title: const Text('Profile'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ProfilePage()),
-              );
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const ProfilePage()));
             },
           ),
           ListTile(
@@ -87,9 +79,9 @@ class SettingsPage extends StatelessWidget {
             title: const Text('Backup & Sync'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const BackupSyncPage()),
-              );
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const BackupSyncPage()));
             },
           ),
           ListTile(
@@ -97,9 +89,9 @@ class SettingsPage extends StatelessWidget {
             title: const Text('Export Data'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ExportDataPage()),
-              );
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const ExportDataPage()));
             },
           ),
           ListTile(
@@ -107,9 +99,9 @@ class SettingsPage extends StatelessWidget {
             title: const Text('Security'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SecurityPage()),
-              );
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const SecurityPage()));
             },
           ),
           ListTile(
@@ -127,9 +119,9 @@ class SettingsPage extends StatelessWidget {
             title: const Text('About'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const AboutPage()),
-              );
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const AboutPage()));
             },
           ),
         ],

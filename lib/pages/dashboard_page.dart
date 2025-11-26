@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/models.dart';
 import '../widgets/summary_card.dart';
 import '../widgets/quick_action_card.dart';
 import '../models/notification_item.dart';
@@ -9,18 +10,16 @@ import 'agriculture_page.dart';
 import 'forex_page.dart';
 import 'transactions_page.dart';
 
-class DashboardPage extends StatelessWidget {
-  const DashboardPage({
-    super.key,
-    required this.themeMode,
-    required this.onThemeModeChanged,
-  });
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers.dart';
 
-  final ThemeMode themeMode;
-  final ValueChanged<ThemeMode> onThemeModeChanged;
+class DashboardPage extends ConsumerWidget {
+  const DashboardPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
@@ -30,11 +29,11 @@ class DashboardPage extends StatelessWidget {
             icon: Icon(
               themeMode == ThemeMode.dark ? Icons.dark_mode : Icons.light_mode,
             ),
-            tooltip: themeMode == ThemeMode.dark ? 'Switch to light mode' : 'Switch to dark mode',
+            tooltip: themeMode == ThemeMode.dark
+                ? 'Switch to light mode'
+                : 'Switch to dark mode',
             onPressed: () {
-              onThemeModeChanged(
-                themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark,
-              );
+              ref.read(themeModeProvider.notifier).toggle();
             },
           ),
           // Notifications bell with unread badge
@@ -49,7 +48,9 @@ class DashboardPage extends StatelessWidget {
                     icon: const Icon(Icons.notifications_outlined),
                     onPressed: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const NotificationsPage()),
+                        MaterialPageRoute(
+                          builder: (_) => const NotificationsPage(),
+                        ),
                       );
                     },
                   ),
@@ -64,11 +65,18 @@ class DashboardPage extends StatelessWidget {
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 1.5),
                         ),
-                        constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                        constraints: const BoxConstraints(
+                          minWidth: 18,
+                          minHeight: 18,
+                        ),
                         child: Center(
                           child: Text(
                             unread > 9 ? '9+' : '$unread',
-                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
@@ -89,17 +97,35 @@ class DashboardPage extends StatelessWidget {
               elevation: 2,
               child: Padding(
                 padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    Text(
-                      'Welcome Back!',
-                      style: Theme.of(context).textTheme.headlineSmall,
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final user = ref.watch(currentUserProvider);
+                        if (user?.photoUrl == null)
+                          return const SizedBox.shrink();
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 16),
+                          child: CircleAvatar(
+                            radius: 24,
+                            backgroundImage: NetworkImage(user!.photoUrl!),
+                          ),
+                        );
+                      },
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Here\'s your financial overview',
-                      style: Theme.of(context).textTheme.bodyMedium,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Welcome Back!',
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Here\'s your financial overview',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -108,48 +134,65 @@ class DashboardPage extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Financial Summary Cards
-            Row(
-              children: const [
-                Expanded(
-                  child: SummaryCard(
-                    title: 'Income',
-                    amount: '\$0.00',
-                    icon: Icons.trending_up,
-                    color: Colors.green,
+            Consumer(
+              builder: (context, ref, child) {
+                final summaryAsync = ref.watch(financialSummaryProvider);
+                return summaryAsync.when(
+                  data: (summary) => Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SummaryCard(
+                              title: 'Income',
+                              amount:
+                                  '\$${summary.totalIncome.toStringAsFixed(2)}',
+                              icon: Icons.trending_up,
+                              color: Colors.green,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: SummaryCard(
+                              title: 'Expenses',
+                              amount:
+                                  '\$${summary.totalExpenses.toStringAsFixed(2)}',
+                              icon: Icons.trending_down,
+                              color: Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SummaryCard(
+                              title: 'Net Profit',
+                              amount:
+                                  '\$${summary.netProfit.toStringAsFixed(2)}',
+                              icon: Icons.account_balance_wallet,
+                              color: Colors.blue,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: SummaryCard(
+                              title: 'Balance',
+                              amount: '\$${summary.balance.toStringAsFixed(2)}',
+                              icon: Icons.savings,
+                              color: Colors.orange,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: SummaryCard(
-                    title: 'Expenses',
-                    amount: '\$0.00',
-                    icon: Icons.trending_down,
-                    color: Colors.red,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: const [
-                Expanded(
-                  child: SummaryCard(
-                    title: 'Net Profit',
-                    amount: '\$0.00',
-                    icon: Icons.account_balance_wallet,
-                    color: Colors.blue,
-                  ),
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: SummaryCard(
-                    title: 'Balance',
-                    amount: '\$0.00',
-                    icon: Icons.savings,
-                    color: Colors.orange,
-                  ),
-                ),
-              ],
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (err, stack) => Text('Error: $err'),
+                );
+              },
             ),
             const SizedBox(height: 24),
 
@@ -175,7 +218,8 @@ class DashboardPage extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const AddTransactionPage(isIncome: true),
+                        builder: (context) =>
+                            const AddTransactionPage(isIncome: true),
                       ),
                     );
                   },
@@ -188,7 +232,8 @@ class DashboardPage extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const AddTransactionPage(isIncome: false),
+                        builder: (context) =>
+                            const AddTransactionPage(isIncome: false),
                       ),
                     );
                   },
@@ -235,7 +280,9 @@ class DashboardPage extends StatelessWidget {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const TransactionsPage()),
+                      MaterialPageRoute(
+                        builder: (context) => const TransactionsPage(),
+                      ),
                     );
                   },
                   child: const Text('View All'),
@@ -243,22 +290,78 @@ class DashboardPage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            const Card(
-              child: Padding(
-                padding: EdgeInsets.all(40),
-                child: Center(
-                  child: Column(
-                    children: [
-                      Icon(Icons.receipt_long, size: 48, color: Colors.grey),
-                      SizedBox(height: 12),
-                      Text(
-                        'No transactions yet',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            Consumer(
+              builder: (context, ref, child) {
+                final transactionsAsync = ref.watch(transactionListProvider);
+                return transactionsAsync.when(
+                  data: (transactions) {
+                    if (transactions.isEmpty) {
+                      return const Card(
+                        child: Padding(
+                          padding: EdgeInsets.all(40),
+                          child: Center(
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.receipt_long,
+                                  size: 48,
+                                  color: Colors.grey,
+                                ),
+                                SizedBox(height: 12),
+                                Text(
+                                  'No transactions yet',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    // Show only top 5 recent transactions
+                    final recent = transactions.take(5).toList();
+                    return Column(
+                      children: recent
+                          .map(
+                            (t) => Card(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor:
+                                      t.type == TransactionType.income
+                                      ? Colors.green.withOpacity(0.1)
+                                      : Colors.red.withOpacity(0.1),
+                                  child: Icon(
+                                    t.type == TransactionType.income
+                                        ? Icons.arrow_upward
+                                        : Icons.arrow_downward,
+                                    color: t.type == TransactionType.income
+                                        ? Colors.green
+                                        : Colors.red,
+                                  ),
+                                ),
+                                title: Text(t.title),
+                                subtitle: Text(t.date.toString().split(' ')[0]),
+                                trailing: Text(
+                                  '\$${t.amount.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: t.type == TransactionType.income
+                                        ? Colors.green
+                                        : Colors.red,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    );
+                  },
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (err, stack) => Text('Error: $err'),
+                );
+              },
             ),
           ],
         ),

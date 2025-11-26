@@ -1,33 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'providers.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/transactions_page.dart';
 import 'pages/reports_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/splash_page.dart';
+import 'pages/login_page.dart';
 
-void main() {
-  runApp(const NumbersApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  runApp(const ProviderScope(child: NumbersApp()));
 }
 
-class NumbersApp extends StatefulWidget {
+class NumbersApp extends ConsumerWidget {
   const NumbersApp({super.key});
 
   @override
-  State<NumbersApp> createState() => _NumbersAppState();
-}
-
-class _NumbersAppState extends State<NumbersApp> {
-  ThemeMode _themeMode = ThemeMode.light;
-
-  void _handleThemeModeChanged(ThemeMode mode) {
-    setState(() {
-      _themeMode = mode;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     const seed = Color(0xFF2E7D32);
+    final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp(
       title: 'NUMBERS',
@@ -38,10 +38,7 @@ class _NumbersAppState extends State<NumbersApp> {
           brightness: Brightness.light,
         ),
         useMaterial3: true,
-        appBarTheme: const AppBarTheme(
-          centerTitle: true,
-          elevation: 0,
-        ),
+        appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
       ),
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
@@ -49,52 +46,54 @@ class _NumbersAppState extends State<NumbersApp> {
           brightness: Brightness.dark,
         ),
         useMaterial3: true,
-        appBarTheme: const AppBarTheme(
-          centerTitle: true,
-          elevation: 0,
-        ),
+        appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
       ),
-      themeMode: _themeMode,
-      home: SplashPage(
-        next: () => HomePage(
-          themeMode: _themeMode,
-          onThemeModeChanged: _handleThemeModeChanged,
-        ),
-      ),
+
+      themeMode: themeMode,
+      home: SplashPage(next: () => const AuthGate()),
     );
   }
 }
 
-class HomePage extends StatefulWidget {
-  const HomePage({
-    super.key,
-    required this.themeMode,
-    required this.onThemeModeChanged,
-  });
-
-  final ThemeMode themeMode;
-  final ValueChanged<ThemeMode> onThemeModeChanged;
+class AuthGate extends ConsumerWidget {
+  const AuthGate({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authStateProvider);
+
+    return authState.when(
+      data: (user) {
+        if (user != null) {
+          return const HomePage();
+        } else {
+          return const LoginPage();
+        }
+      },
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (err, stack) => Scaffold(body: Center(child: Text('Error: $err'))),
+    );
+  }
 }
 
-class _HomePageState extends State<HomePage> {
+class HomePage extends ConsumerStatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
   int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
     final pages = [
-      DashboardPage(
-        themeMode: widget.themeMode,
-        onThemeModeChanged: widget.onThemeModeChanged,
-      ),
+      const DashboardPage(),
       const TransactionsPage(),
       const ReportsPage(),
-      SettingsPage(
-        themeMode: widget.themeMode,
-        onThemeModeChanged: widget.onThemeModeChanged,
-      ),
+      const SettingsPage(),
     ];
 
     return Scaffold(

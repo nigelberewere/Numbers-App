@@ -1,0 +1,9 @@
+Analyzing numbers...                                            
+
+   info - Don't invoke 'print' in production code - lib\main.dart:23:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\main.dart:24:5 - avoid_print
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\pages\add_transaction_page.dart:338:37 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\pages\add_transaction_page.dart:342:44 - use_build_context_synchronously
+  error - The function 'StateProvider' isn't defined - lib\providers.dart:64:27 - undefined_function
+   info - Don't invoke 'print' in production code - lib\services\auth_service.dart:84:7 - avoid_print
+

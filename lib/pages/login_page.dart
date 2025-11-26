@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/auth_service.dart';
 import '../models/auth_user.dart';
+import '../providers.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -19,7 +21,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
   AuthUser? _user;
 
-  AuthService get _auth => authService;
+  AuthService get _auth => ref.read(authServiceProvider);
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -27,17 +29,26 @@ class _LoginPageState extends State<LoginPage> {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
     AuthUser? user;
-    if (_isLogin) {
-      user = await _auth.signInWithEmail(email, password);
-    } else {
-      user = await _auth.signUpWithEmail(email, password);
+    try {
+      if (_isLogin) {
+        user = await _auth.signInWithEmail(email, password);
+      } else {
+        user = await _auth.signUpWithEmail(email, password);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showError(e.toString());
+      setState(() => _loading = false);
+      return;
     }
+
+    if (!mounted) return;
     setState(() {
       _user = user;
       _loading = false;
     });
     if (user != null) {
-      _showSignedInDialog(user);
+      // Navigation is handled by AuthGate
     } else {
       _showError('Sign in failed. Check credentials.');
     }
@@ -46,12 +57,15 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _signInWithGoogle() async {
     setState(() => _loading = true);
     final user = await _auth.signInWithGoogle();
+    
+    if (!mounted) return;
     setState(() {
       _user = user;
       _loading = false;
     });
+    
     if (user != null) {
-      _showSignedInDialog(user);
+      // Navigation is handled by AuthGate
     } else {
       _showError('Google sign in cancelled or failed.');
     }

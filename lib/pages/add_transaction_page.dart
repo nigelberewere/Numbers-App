@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/models.dart';
 
-class AddTransactionPage extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers.dart';
+
+class AddTransactionPage extends ConsumerStatefulWidget {
   final bool isIncome;
   final Transaction? existingTransaction; // For editing
 
@@ -13,16 +16,16 @@ class AddTransactionPage extends StatefulWidget {
   });
 
   @override
-  State<AddTransactionPage> createState() => _AddTransactionPageState();
+  ConsumerState<AddTransactionPage> createState() => _AddTransactionPageState();
 }
 
-class _AddTransactionPageState extends State<AddTransactionPage> {
+class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _referenceController = TextEditingController();
-  
+
   DateTime _selectedDate = DateTime.now();
   TransactionCategory? _selectedCategory;
   PaymentMethod _selectedPaymentMethod = PaymentMethod.cash;
@@ -64,8 +67,8 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
       _loadExistingTransaction();
     } else {
       // Set default category
-      _selectedCategory = widget.isIncome 
-          ? _incomeCategories.first 
+      _selectedCategory = widget.isIncome
+          ? _incomeCategories.first
           : _expenseCategories.first;
     }
   }
@@ -206,7 +209,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     }
   }
 
-  void _saveTransaction() {
+  Future<void> _saveTransaction() async {
     if (_formKey.currentState!.validate()) {
       if (_selectedCategory == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -229,18 +232,21 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
 
       // Create transaction object
       final transaction = Transaction(
-        id: widget.existingTransaction?.id ?? 
+        id:
+            widget.existingTransaction?.id ??
             'tx_${DateTime.now().millisecondsSinceEpoch}',
         title: _titleController.text.trim(),
         amount: double.parse(_amountController.text),
-        type: widget.isIncome ? TransactionType.income : TransactionType.expense,
+        type: widget.isIncome
+            ? TransactionType.income
+            : TransactionType.expense,
         category: _selectedCategory!,
         date: dateTime,
-        description: _descriptionController.text.trim().isNotEmpty 
-            ? _descriptionController.text.trim() 
+        description: _descriptionController.text.trim().isNotEmpty
+            ? _descriptionController.text.trim()
             : null,
-        reference: _referenceController.text.trim().isNotEmpty 
-            ? _referenceController.text.trim() 
+        reference: _referenceController.text.trim().isNotEmpty
+            ? _referenceController.text.trim()
             : null,
         paymentMethod: _selectedPaymentMethod,
         isRecurring: _isRecurring,
@@ -249,20 +255,37 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
         updatedAt: widget.existingTransaction != null ? DateTime.now() : null,
       );
 
-      // TODO: Save to database via repository
-      // Debug: print('Transaction to save: ${transaction.toMap()}');
+      try {
+        final repo = ref.read(transactionRepositoryProvider);
+        if (widget.existingTransaction != null) {
+          await repo.updateTransaction(transaction);
+        } else {
+          await repo.addTransaction(transaction);
+        }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.existingTransaction != null
-                ? 'Transaction updated successfully!'
-                : '${widget.isIncome ? "Income" : "Expense"} added successfully!',
-          ),
-          backgroundColor: Colors.green,
-        ),
-      );
-      Navigator.pop(context, transaction);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                widget.existingTransaction != null
+                    ? 'Transaction updated successfully!'
+                    : '${widget.isIncome ? "Income" : "Expense"} added successfully!',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context, transaction);
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error saving transaction: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -274,17 +297,57 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          isEditing 
-              ? 'Edit Transaction' 
-              : 'Add ${widget.isIncome ? "Income" : "Expense"}'
+          isEditing
+              ? 'Edit Transaction'
+              : 'Add ${widget.isIncome ? "Income" : "Expense"}',
         ),
         actions: [
           if (isEditing)
             IconButton(
               icon: const Icon(Icons.delete),
-              onPressed: () {
-                // TODO: Delete transaction
-                Navigator.pop(context);
+              onPressed: () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Delete Transaction'),
+                    content: const Text(
+                      'Are you sure you want to delete this transaction?',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.red,
+                        ),
+                        child: const Text('Delete'),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirm == true && mounted) {
+                  try {
+                    await ref
+                        .read(transactionRepositoryProvider)
+                        .deleteTransaction(widget.existingTransaction!.id);
+                    if (mounted) {
+                      Navigator.pop(context);
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error deleting transaction: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                }
               },
             ),
         ],
@@ -298,7 +361,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: widget.isIncome 
+                color: widget.isIncome
                     ? Colors.green.withValues(alpha: 0.1)
                     : Colors.red.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
@@ -316,7 +379,9 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    widget.isIncome ? 'Income Transaction' : 'Expense Transaction',
+                    widget.isIncome
+                        ? 'Income Transaction'
+                        : 'Expense Transaction',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -364,7 +429,9 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 fillColor: Colors.grey.withValues(alpha: 0.1),
                 helperText: 'Enter amount without currency symbol',
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
               ],
@@ -391,9 +458,9 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 labelText: 'Category *',
                 border: const OutlineInputBorder(),
                 prefixIcon: Icon(
-                  _selectedCategory != null 
+                  _selectedCategory != null
                       ? _getCategoryIcon(_selectedCategory!)
-                      : Icons.category
+                      : Icons.category,
                 ),
                 filled: true,
                 fillColor: Colors.grey.withValues(alpha: 0.1),
@@ -595,10 +662,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                       const SizedBox(height: 8),
                       Text(
                         'This transaction will repeat ${_recurringFrequency?.toLowerCase() ?? "periodically"}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ],
@@ -629,7 +693,9 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                     label: Text(isEditing ? 'Update' : 'Save Transaction'),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: widget.isIncome ? Colors.green : Colors.red,
+                      backgroundColor: widget.isIncome
+                          ? Colors.green
+                          : Colors.red,
                       foregroundColor: Colors.white,
                     ),
                   ),

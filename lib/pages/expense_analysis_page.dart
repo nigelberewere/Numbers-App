@@ -4,20 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../models/models.dart';
-import '../services/mock_transaction_repository.dart';
 import '../services/transaction_repository.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers.dart';
 import '../widgets/expense_pie_chart.dart';
 
-class ExpenseAnalysisPage extends StatefulWidget {
+class ExpenseAnalysisPage extends ConsumerStatefulWidget {
   final TransactionRepository? repository;
 
   const ExpenseAnalysisPage({super.key, this.repository});
 
   @override
-  State<ExpenseAnalysisPage> createState() => _ExpenseAnalysisPageState();
+  ConsumerState<ExpenseAnalysisPage> createState() =>
+      _ExpenseAnalysisPageState();
 }
 
-class _ExpenseAnalysisPageState extends State<ExpenseAnalysisPage> {
+class _ExpenseAnalysisPageState extends ConsumerState<ExpenseAnalysisPage> {
   late final TransactionRepository _repository;
   final NumberFormat _currency = NumberFormat.currency(symbol: '\$');
   final DateFormat _dateFormat = DateFormat.yMMMd();
@@ -30,7 +32,7 @@ class _ExpenseAnalysisPageState extends State<ExpenseAnalysisPage> {
   @override
   void initState() {
     super.initState();
-    _repository = widget.repository ?? MockTransactionRepository();
+    _repository = widget.repository ?? ref.read(transactionRepositoryProvider);
     _loadData();
   }
 
@@ -72,8 +74,8 @@ class _ExpenseAnalysisPageState extends State<ExpenseAnalysisPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _buildErrorState()
-              : _buildContent(),
+          ? _buildErrorState()
+          : _buildContent(),
     );
   }
 
@@ -99,11 +101,10 @@ class _ExpenseAnalysisPageState extends State<ExpenseAnalysisPage> {
       padding: const EdgeInsets.all(16),
       children: [
         _buildSummaryRow(snapshot),
-        if (snapshot.periodStart != null && snapshot.periodEnd != null)
-          ...[
-            const SizedBox(height: 12),
-            _buildPeriodBanner(snapshot),
-          ],
+        if (snapshot.periodStart != null && snapshot.periodEnd != null) ...[
+          const SizedBox(height: 12),
+          _buildPeriodBanner(snapshot),
+        ],
         const SizedBox(height: 16),
         Card(
           child: Padding(
@@ -155,30 +156,32 @@ class _ExpenseAnalysisPageState extends State<ExpenseAnalysisPage> {
       spacing: 12,
       runSpacing: 12,
       children: cards
-          .map((card) => SizedBox(
-                width: math.min(MediaQuery.of(context).size.width - 32, 260.0),
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(card.icon, color: card.color, size: 28),
-                        const SizedBox(height: 12),
-                        Text(
-                          card.value,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge
-                              ?.copyWith(color: card.color, fontWeight: FontWeight.w600),
+          .map(
+            (card) => SizedBox(
+              width: math.min(MediaQuery.of(context).size.width - 32, 260.0),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(card.icon, color: card.color, size: 28),
+                      const SizedBox(height: 12),
+                      Text(
+                        card.value,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: card.color,
+                          fontWeight: FontWeight.w600,
                         ),
-                        const SizedBox(height: 4),
-                        Text(card.label),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(card.label),
+                    ],
                   ),
                 ),
-              ))
+              ),
+            ),
+          )
           .toList(),
     );
   }
@@ -193,12 +196,19 @@ class _ExpenseAnalysisPageState extends State<ExpenseAnalysisPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Observation Window', style: Theme.of(context).textTheme.titleSmall),
+            Text(
+              'Observation Window',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
             const SizedBox(height: 4),
-            Text('${formatter.format(snapshot.periodStart!)} — ${formatter.format(snapshot.periodEnd!)}'),
+            Text(
+              '${formatter.format(snapshot.periodStart!)} — ${formatter.format(snapshot.periodEnd!)}',
+            ),
             const SizedBox(height: 12),
-            Text('Expense entries: ${snapshot.expenseCount}',
-                style: Theme.of(context).textTheme.bodyMedium),
+            Text(
+              'Expense entries: ${snapshot.expenseCount}',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
           ],
         ),
       ),
@@ -216,7 +226,10 @@ class _ExpenseAnalysisPageState extends State<ExpenseAnalysisPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Top Categories', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Top Categories',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 12),
             if (entries.isEmpty)
               const Text('No expenses recorded yet')
@@ -235,8 +248,10 @@ class _ExpenseAnalysisPageState extends State<ExpenseAnalysisPage> {
                       Row(
                         children: [
                           Expanded(child: Text(entry.key)),
-                          Text(_currency.format(entry.value),
-                              style: const TextStyle(fontWeight: FontWeight.w600)),
+                          Text(
+                            _currency.format(entry.value),
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 6),
@@ -265,24 +280,31 @@ class _ExpenseAnalysisPageState extends State<ExpenseAnalysisPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Recent Expenses', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Recent Expenses',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 12),
             if (expenses.isEmpty)
               const Text('There are no recent expenses to show yet')
             else
-              ...expenses.map((expense) => ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.red.withAlpha((0.12 * 255).round()),
-                      child: const Icon(Icons.payments, color: Colors.red),
-                    ),
-                    title: Text(expense.title),
-                    subtitle: Text('${expense.categoryName} • ${_dateFormat.format(expense.date)}'),
-                    trailing: Text(
-                      _currency.format(expense.amount),
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  )),
+              ...expenses.map(
+                (expense) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.red.withAlpha((0.12 * 255).round()),
+                    child: const Icon(Icons.payments, color: Colors.red),
+                  ),
+                  title: Text(expense.title),
+                  subtitle: Text(
+                    '${expense.categoryName} • ${_dateFormat.format(expense.date)}',
+                  ),
+                  trailing: Text(
+                    _currency.format(expense.amount),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -296,25 +318,33 @@ class _ExpenseAnalysisPageState extends State<ExpenseAnalysisPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Recurring Commitments', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Recurring Commitments',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 12),
             if (expenses.isEmpty)
               const Text('No recurring expenses found')
             else
-              ...expenses.map((expense) => ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.purple.withAlpha((0.12 * 255).round()),
-                      child: const Icon(Icons.refresh, color: Colors.purple),
+              ...expenses.map(
+                (expense) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.purple.withAlpha(
+                      (0.12 * 255).round(),
                     ),
-                    title: Text(expense.title),
-                    subtitle: Text(
-                        '${expense.recurringFrequency ?? 'Recurring'} • ${_dateFormat.format(expense.date)}'),
-                    trailing: Text(
-                      _currency.format(expense.amount),
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  )),
+                    child: const Icon(Icons.refresh, color: Colors.purple),
+                  ),
+                  title: Text(expense.title),
+                  subtitle: Text(
+                    '${expense.recurringFrequency ?? 'Recurring'} • ${_dateFormat.format(expense.date)}',
+                  ),
+                  trailing: Text(
+                    _currency.format(expense.amount),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -355,7 +385,9 @@ class ExpenseAnalysisSnapshot {
     required this.expenseCount,
   });
 
-  factory ExpenseAnalysisSnapshot.fromTransactions(List<Transaction> transactions) {
+  factory ExpenseAnalysisSnapshot.fromTransactions(
+    List<Transaction> transactions,
+  ) {
     final expenses = transactions.where((t) => t.isExpense).toList();
     if (expenses.isEmpty) {
       return ExpenseAnalysisSnapshot(
@@ -372,35 +404,44 @@ class ExpenseAnalysisSnapshot {
       );
     }
 
-    final totalExpenses = expenses.fold<double>(0.0, (sum, t) => sum + t.amount);
+    final totalExpenses = expenses.fold<double>(
+      0.0,
+      (sum, t) => sum + t.amount,
+    );
     final byCategory = <String, double>{};
     for (final transaction in expenses) {
       byCategory[transaction.categoryName] =
           (byCategory[transaction.categoryName] ?? 0) + transaction.amount;
     }
 
-  final distinctDays = expenses
-    .map((t) => DateTime(t.date.year, t.date.month, t.date.day))
-    .toSet()
-    .length;
-  final averageDailySpend = distinctDays > 0 ? totalExpenses / distinctDays : 0.0;
+    final distinctDays = expenses
+        .map((t) => DateTime(t.date.year, t.date.month, t.date.day))
+        .toSet()
+        .length;
+    final averageDailySpend = distinctDays > 0
+        ? totalExpenses / distinctDays
+        : 0.0;
 
     final recentExpenses = List<Transaction>.from(expenses)
       ..sort((a, b) => b.date.compareTo(a.date));
-    final recurringExpenses = expenses
-        .where((t) => t.isRecurring)
-        .toList()
+    final recurringExpenses = expenses.where((t) => t.isRecurring).toList()
       ..sort((a, b) => b.amount.compareTo(a.amount));
 
     final sortedCategories = byCategory.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    final topCategory = sortedCategories.isEmpty ? null : sortedCategories.first.key;
+    final topCategory = sortedCategories.isEmpty
+        ? null
+        : sortedCategories.first.key;
     final topShare = sortedCategories.isEmpty || totalExpenses == 0
         ? 0.0
         : sortedCategories.first.value / totalExpenses;
 
-    final periodStart = expenses.map((t) => t.date).reduce((a, b) => a.isBefore(b) ? a : b);
-    final periodEnd = expenses.map((t) => t.date).reduce((a, b) => a.isAfter(b) ? a : b);
+    final periodStart = expenses
+        .map((t) => t.date)
+        .reduce((a, b) => a.isBefore(b) ? a : b);
+    final periodEnd = expenses
+        .map((t) => t.date)
+        .reduce((a, b) => a.isAfter(b) ? a : b);
 
     return ExpenseAnalysisSnapshot(
       totalExpenses: totalExpenses,

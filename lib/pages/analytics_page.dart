@@ -1,27 +1,28 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../services/transaction_repository.dart';
-import '../services/mock_transaction_repository.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers.dart';
 import '../services/export_service.dart';
 import '../widgets/expense_pie_chart.dart';
 import '../widgets/income_expense_line_chart.dart';
 import '../widgets/monthly_comparison_bar_chart.dart';
 import '../widgets/transaction_filter_dialog.dart';
 
-class AnalyticsPage extends StatefulWidget {
+class AnalyticsPage extends ConsumerStatefulWidget {
   final TransactionRepository? repository;
 
   const AnalyticsPage({super.key, this.repository});
 
   @override
-  State<AnalyticsPage> createState() => _AnalyticsPageState();
+  ConsumerState<AnalyticsPage> createState() => _AnalyticsPageState();
 }
 
-class _AnalyticsPageState extends State<AnalyticsPage> {
+class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
   late final TransactionRepository _repository;
   DateRange _selectedDateRange = DateRange.month;
   TransactionFilters _filters = TransactionFilters();
-  
+
   List<Transaction> _transactions = [];
   bool _isLoading = true;
   String? _error;
@@ -29,7 +30,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   @override
   void initState() {
     super.initState();
-    _repository = widget.repository ?? MockTransactionRepository();
+    _repository = widget.repository ?? ref.read(transactionRepositoryProvider);
     _loadTransactions();
   }
 
@@ -42,7 +43,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     try {
       var transactions = await _repository.getAllTransactions();
       transactions = _applyFilters(transactions);
-      
+
       setState(() {
         _transactions = transactions;
         _isLoading = false;
@@ -59,25 +60,39 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     var filtered = transactions;
 
     if (_filters.startDate != null && _filters.endDate != null) {
-      filtered = filtered.where((t) =>
-          t.date.isAfter(_filters.startDate!.subtract(const Duration(days: 1))) &&
-          t.date.isBefore(_filters.endDate!.add(const Duration(days: 1)))).toList();
+      filtered = filtered
+          .where(
+            (t) =>
+                t.date.isAfter(
+                  _filters.startDate!.subtract(const Duration(days: 1)),
+                ) &&
+                t.date.isBefore(_filters.endDate!.add(const Duration(days: 1))),
+          )
+          .toList();
     }
 
     if (_filters.transactionType != null) {
-      filtered = filtered.where((t) => t.type == _filters.transactionType).toList();
+      filtered = filtered
+          .where((t) => t.type == _filters.transactionType)
+          .toList();
     }
 
     if (_filters.categories.isNotEmpty) {
-      filtered = filtered.where((t) => _filters.categories.contains(t.category)).toList();
+      filtered = filtered
+          .where((t) => _filters.categories.contains(t.category))
+          .toList();
     }
 
     if (_filters.minAmount != null) {
-      filtered = filtered.where((t) => t.amount >= _filters.minAmount!).toList();
+      filtered = filtered
+          .where((t) => t.amount >= _filters.minAmount!)
+          .toList();
     }
 
     if (_filters.maxAmount != null) {
-      filtered = filtered.where((t) => t.amount <= _filters.maxAmount!).toList();
+      filtered = filtered
+          .where((t) => t.amount <= _filters.maxAmount!)
+          .toList();
     }
 
     return filtered;
@@ -115,16 +130,19 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             icon: const Icon(Icons.download),
             onPressed: _transactions.isNotEmpty ? _exportData : null,
           ),
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadTransactions),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadTransactions,
+          ),
         ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _buildErrorState()
-              : _transactions.isEmpty
-                  ? _buildEmptyState()
-                  : _buildContent(),
+          ? _buildErrorState()
+          : _transactions.isEmpty
+          ? _buildEmptyState()
+          : _buildContent(),
     );
   }
 
@@ -137,7 +155,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           const SizedBox(height: 16),
           Text(_error!, textAlign: TextAlign.center),
           const SizedBox(height: 16),
-          ElevatedButton(onPressed: _loadTransactions, child: const Text('Retry')),
+          ElevatedButton(
+            onPressed: _loadTransactions,
+            child: const Text('Retry'),
+          ),
         ],
       ),
     );
@@ -150,11 +171,16 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         children: [
           Icon(Icons.analytics_outlined, size: 64, color: Colors.grey[400]),
           const SizedBox(height: 16),
-          Text('No transactions found', style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            'No transactions found',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           const SizedBox(height: 8),
-          Text(_filters.hasActiveFilters
-              ? 'Try adjusting your filters'
-              : 'Add transactions to see analytics'),
+          Text(
+            _filters.hasActiveFilters
+                ? 'Try adjusting your filters'
+                : 'Add transactions to see analytics',
+          ),
         ],
       ),
     );
@@ -174,7 +200,12 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         if (_filters.hasActiveFilters) _buildFilterBanner(),
         _buildSummaryRow(income, expenses),
         const SizedBox(height: 24),
-        Card(child: Padding(padding: const EdgeInsets.all(16), child: MonthlyComparisonBarChart(transactions: _transactions))),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: MonthlyComparisonBarChart(transactions: _transactions),
+          ),
+        ),
         const SizedBox(height: 24),
         Card(
           child: Padding(
@@ -185,20 +216,32 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                   segments: const [
                     ButtonSegment(value: DateRange.week, label: Text('Week')),
                     ButtonSegment(value: DateRange.month, label: Text('Month')),
-                    ButtonSegment(value: DateRange.quarter, label: Text('Quarter')),
+                    ButtonSegment(
+                      value: DateRange.quarter,
+                      label: Text('Quarter'),
+                    ),
                     ButtonSegment(value: DateRange.year, label: Text('Year')),
                   ],
                   selected: {_selectedDateRange},
-                  onSelectionChanged: (s) => setState(() => _selectedDateRange = s.first),
+                  onSelectionChanged: (s) =>
+                      setState(() => _selectedDateRange = s.first),
                 ),
                 const SizedBox(height: 16),
-                IncomeExpenseLineChart(transactions: _transactions, dateRange: _selectedDateRange),
+                IncomeExpenseLineChart(
+                  transactions: _transactions,
+                  dateRange: _selectedDateRange,
+                ),
               ],
             ),
           ),
         ),
         const SizedBox(height: 24),
-        Card(child: Padding(padding: const EdgeInsets.all(16), child: ExpensePieChart(transactions: _transactions))),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: ExpensePieChart(transactions: _transactions),
+          ),
+        ),
       ],
     );
   }
@@ -214,7 +257,11 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               children: [
                 const Icon(Icons.filter_alt),
                 const SizedBox(width: 8),
-                Expanded(child: Text('Filters active - ${_transactions.length} transactions')),
+                Expanded(
+                  child: Text(
+                    'Filters active - ${_transactions.length} transactions',
+                  ),
+                ),
                 TextButton(
                   onPressed: () {
                     setState(() => _filters = TransactionFilters());
@@ -237,18 +284,51 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
     return Row(
       children: [
-        Expanded(child: _buildSummaryCard('Income', '\$${income.toStringAsFixed(0)}', Icons.trending_up, Colors.green)),
+        Expanded(
+          child: _buildSummaryCard(
+            'Income',
+            '\$${income.toStringAsFixed(0)}',
+            Icons.trending_up,
+            Colors.green,
+          ),
+        ),
         const SizedBox(width: 12),
-        Expanded(child: _buildSummaryCard('Expenses', '\$${expenses.toStringAsFixed(0)}', Icons.trending_down, Colors.red)),
+        Expanded(
+          child: _buildSummaryCard(
+            'Expenses',
+            '\$${expenses.toStringAsFixed(0)}',
+            Icons.trending_down,
+            Colors.red,
+          ),
+        ),
         const SizedBox(width: 12),
-        Expanded(child: _buildSummaryCard('Profit', '\$${profit.toStringAsFixed(0)}', Icons.account_balance_wallet, profit >= 0 ? Colors.green : Colors.red)),
+        Expanded(
+          child: _buildSummaryCard(
+            'Profit',
+            '\$${profit.toStringAsFixed(0)}',
+            Icons.account_balance_wallet,
+            profit >= 0 ? Colors.green : Colors.red,
+          ),
+        ),
         const SizedBox(width: 12),
-        Expanded(child: _buildSummaryCard('Savings', '${savings.toStringAsFixed(1)}%', Icons.savings, Colors.blue)),
+        Expanded(
+          child: _buildSummaryCard(
+            'Savings',
+            '${savings.toStringAsFixed(1)}%',
+            Icons.savings,
+            Colors.blue,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildSummaryCard(String title, String value, IconData icon, Color color) {
+  Widget _buildSummaryCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -256,9 +336,20 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           children: [
             Icon(icon, color: color, size: 32),
             const SizedBox(height: 8),
-            Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey), textAlign: TextAlign.center),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
