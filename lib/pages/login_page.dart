@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/auth_service.dart';
 import '../models/auth_user.dart';
 import '../providers.dart';
+import '../navigator_key.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -48,6 +49,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       _loading = false;
     });
     if (user != null) {
+      _showSignedInDialog(user);
       // Navigation is handled by AuthGate
     } else {
       _showError('Sign in failed. Check credentials.');
@@ -56,31 +58,66 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   Future<void> _signInWithGoogle() async {
     setState(() => _loading = true);
-    final user = await _auth.signInWithGoogle();
-    
-    if (!mounted) return;
-    setState(() {
-      _user = user;
-      _loading = false;
-    });
-    
-    if (user != null) {
-      // Navigation is handled by AuthGate
-    } else {
-      _showError('Google sign in cancelled or failed.');
+    try {
+      final user = await _auth.signInWithGoogle();
+
+      if (!mounted) return;
+      setState(() {
+        _user = user;
+        _loading = false;
+      });
+
+      if (user != null) {
+        // Use a slight delay to ensure the dialog is shown after any potential rebuilds
+        Future.delayed(const Duration(milliseconds: 100), () {
+          _showSignedInDialog(user);
+        });
+      } else {
+        _showError('Google sign in cancelled or failed.');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loading = false);
+        _showError('Sign in error: $e');
+      }
     }
   }
 
   void _showSignedInDialog(AuthUser user) {
+    if (navigatorKey.currentState == null) return;
+
     showDialog<void>(
-      context: context,
+      context: navigatorKey.currentState!.context,
+      barrierDismissible: false,
       builder: (_) => AlertDialog(
-        title: const Text('Signed in'),
-        content: Text('Hello ${user.displayName ?? user.email ?? user.uid}'),
+        icon: const Icon(Icons.check_circle, color: Colors.green, size: 48),
+        title: const Text('Welcome Back!'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Successfully signed in as',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              user.displayName ?? user.email ?? 'User',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
+          FilledButton(
+            onPressed: () {
+              // Close the dialog
+              if (navigatorKey.currentState?.canPop() ?? false) {
+                navigatorKey.currentState!.pop();
+              }
+            },
+            child: const Text('Continue to Dashboard'),
           ),
         ],
       ),

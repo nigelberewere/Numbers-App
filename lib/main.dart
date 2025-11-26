@@ -9,14 +9,13 @@ import 'pages/reports_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/splash_page.dart';
 import 'pages/login_page.dart';
+import 'navigator_key.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   runApp(const ProviderScope(child: NumbersApp()));
 }
@@ -30,6 +29,7 @@ class NumbersApp extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'NUMBERS',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

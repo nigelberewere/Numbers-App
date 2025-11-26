@@ -102,8 +102,9 @@ class DashboardPage extends ConsumerWidget {
                     Consumer(
                       builder: (context, ref, child) {
                         final user = ref.watch(currentUserProvider);
-                        if (user?.photoUrl == null)
+                        if (user?.photoUrl == null) {
                           return const SizedBox.shrink();
+                        }
                         return Padding(
                           padding: const EdgeInsets.only(right: 16),
                           child: CircleAvatar(
