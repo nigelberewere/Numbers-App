@@ -1,7 +1,4 @@
-enum TransactionType {
-  income,
-  expense,
-}
+enum TransactionType { income, expense }
 
 enum TransactionCategory {
   // Income categories
@@ -9,7 +6,7 @@ enum TransactionCategory {
   trading,
   harvest,
   livestock,
-  
+
   // Expense categories
   feed,
   fertilizer,
@@ -21,13 +18,7 @@ enum TransactionCategory {
   other,
 }
 
-enum PaymentMethod {
-  cash,
-  bank,
-  mobileMoney,
-  card,
-  check,
-}
+enum PaymentMethod { cash, bank, mobileMoney, card, check }
 
 class Transaction {
   final String id;
@@ -65,7 +56,7 @@ class Transaction {
   // Helper getters
   bool get isIncome => type == TransactionType.income;
   bool get isExpense => type == TransactionType.expense;
-  
+
   String get categoryName {
     switch (category) {
       case TransactionCategory.sales:
@@ -135,19 +126,19 @@ class Transaction {
     return Transaction(
       id: map['id'],
       title: map['title'],
-      amount: map['amount'],
+      amount: (map['amount'] as num).toDouble(),
       type: TransactionType.values[map['type']],
       category: TransactionCategory.values[map['category']],
       date: DateTime.parse(map['date']),
       description: map['description'],
       reference: map['reference'],
-      paymentMethod: map['paymentMethod'] != null 
-          ? PaymentMethod.values[map['paymentMethod']] 
+      paymentMethod: map['paymentMethod'] != null
+          ? PaymentMethod.values[map['paymentMethod']]
           : null,
       attachmentPath: map['attachmentPath'],
       createdAt: DateTime.parse(map['createdAt']),
-      updatedAt: map['updatedAt'] != null 
-          ? DateTime.parse(map['updatedAt']) 
+      updatedAt: map['updatedAt'] != null
+          ? DateTime.parse(map['updatedAt'])
           : null,
       isRecurring: map['isRecurring'] == 1,
       recurringFrequency: map['recurringFrequency'],

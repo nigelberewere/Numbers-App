@@ -96,6 +96,82 @@ final transactionListProvider = StreamProvider<List<Transaction>>((ref) {
   }
 });
 
+class TransactionFilter {
+  final String? query;
+  final TransactionType? type;
+  final TransactionCategory? category;
+
+  const TransactionFilter({this.query, this.type, this.category});
+
+  TransactionFilter copyWith({
+    String? query,
+    TransactionType? type,
+    TransactionCategory? category,
+  }) {
+    return TransactionFilter(
+      query: query ?? this.query,
+      type: type ?? this.type,
+      category: category ?? this.category,
+    );
+  }
+}
+
+class TransactionFilterNotifier extends Notifier<TransactionFilter> {
+  @override
+  TransactionFilter build() {
+    return const TransactionFilter();
+  }
+
+  void setQuery(String query) {
+    state = state.copyWith(query: query);
+  }
+
+  void setType(TransactionType? type) {
+    state = state.copyWith(type: type);
+  }
+
+  void setCategory(TransactionCategory? category) {
+    state = state.copyWith(category: category);
+  }
+
+  void reset() {
+    state = const TransactionFilter();
+  }
+}
+
+final transactionFilterProvider =
+    NotifierProvider<TransactionFilterNotifier, TransactionFilter>(
+      TransactionFilterNotifier.new,
+    );
+
+final filteredTransactionListProvider = Provider<AsyncValue<List<Transaction>>>(
+  (ref) {
+    final transactionsAsync = ref.watch(transactionListProvider);
+    final filter = ref.watch(transactionFilterProvider);
+
+    return transactionsAsync.whenData((transactions) {
+      return transactions.where((t) {
+        if (filter.query != null && filter.query!.isNotEmpty) {
+          if (!t.title.toLowerCase().contains(filter.query!.toLowerCase())) {
+            return false;
+          }
+        }
+        if (filter.type != null) {
+          if (t.type != filter.type) {
+            return false;
+          }
+        }
+        if (filter.category != null) {
+          if (t.category != filter.category) {
+            return false;
+          }
+        }
+        return true;
+      }).toList();
+    });
+  },
+);
+
 final agricultureListProvider = FutureProvider<List<AgricultureRecord>>((
   ref,
 ) async {
@@ -142,12 +218,30 @@ final budgetProgressListProvider = FutureProvider<List<BudgetProgress>>((
   return repo.getAllBudgetProgress();
 });
 
-final financialSummaryProvider = FutureProvider<FinancialSummary>((ref) async {
-  // Invalidate this provider when transactions change
-  ref.watch(transactionListProvider);
+final financialSummaryProvider = Provider<AsyncValue<FinancialSummary>>((ref) {
+  final transactionsAsync = ref.watch(transactionListProvider);
 
-  final repo = ref.watch(transactionRepositoryProvider);
-  return repo.getFinancialSummary();
+  return transactionsAsync.whenData((transactions) {
+    double income = 0;
+    double expenses = 0;
+
+    for (var t in transactions) {
+      if (t.type == TransactionType.income) {
+        income += t.amount;
+      } else {
+        expenses += t.amount;
+      }
+    }
+
+    return FinancialSummary(
+      totalIncome: income,
+      totalExpenses: expenses,
+      netProfit: income - expenses,
+      balance: income - expenses,
+      periodStart: DateTime.now(), // Placeholder
+      periodEnd: DateTime.now(), // Placeholder
+    );
+  });
 });
 
 // --- Service Providers ---
