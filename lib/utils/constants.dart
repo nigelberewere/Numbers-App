@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AppColors {
   static const Color primary = Color(0xFF2E7D32);
@@ -22,5 +23,5 @@ class AppConstants {
   static const String dateFormat = 'dd/MM/yyyy';
   static const String dateTimeFormat = 'dd/MM/yyyy HH:mm';
 
-  static const String geminiApiKey = 'gemini_api_key';
+  static String get geminiApiKey => dotenv.env['GEMINI_API_KEY'] ?? '';
 }
