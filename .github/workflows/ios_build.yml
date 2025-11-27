@@ -1,0 +1,37 @@
+name: Build iOS for Sideloading
+
+on:
+  workflow_dispatch: # Allows you to click a button to start the build
+
+jobs:
+  build_ios:
+    runs-on: macos-latest # Uses GitHub's virtual Mac
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      # RE-INJECT YOUR KEYS (From the previous step)
+      - name: Create .env file
+        run: echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # THE MAGIC TRICK: Build unsigned .app and zip it manually into an .ipa
+      - name: Build iOS (Unsigned)
+        run: |
+          flutter build ios --release --no-codesign
+          mkdir Payload
+          mv build/ios/iphoneos/Runner.app Payload
+          zip -qq -r -9 release.ipa Payload
+
+      # Upload the result so you can download it
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: my-app-release
+          path: release.ipa
