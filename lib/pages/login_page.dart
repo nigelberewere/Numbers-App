@@ -260,8 +260,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               ),
                               keyboardType: TextInputType.emailAddress,
                               validator: (v) {
-                                if (v == null || v.isEmpty)
+                                if (v == null || v.isEmpty) {
                                   return 'Enter email';
+                                }
                                 if (!RegExp(
                                   r"^[^@\s]+@[^@\s]+\.[^@\s]+$",
                                 ).hasMatch(v)) {

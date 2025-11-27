@@ -248,7 +248,7 @@ class FilterBottomSheet extends ConsumerWidget {
           const Text('Category', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           DropdownButtonFormField<TransactionCategory>(
-            value: filter.category,
+            initialValue: filter.category,
             decoration: const InputDecoration(
               border: OutlineInputBorder(),
               labelText: 'Select Category',
