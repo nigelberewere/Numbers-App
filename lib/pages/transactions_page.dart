@@ -116,30 +116,71 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
             itemCount: transactions.length,
             itemBuilder: (context, index) {
               final transaction = transactions[index];
-              return ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: transaction.isIncome
-                      ? Colors.green[100]
-                      : Colors.red[100],
-                  child: Icon(
-                    transaction.isIncome
-                        ? Icons.arrow_downward
-                        : Icons.arrow_upward,
-                    color: transaction.isIncome ? Colors.green : Colors.red,
-                  ),
+              return Dismissible(
+                key: Key(transaction.id),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  color: Colors.red,
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20.0),
+                  child: const Icon(Icons.delete, color: Colors.white),
                 ),
-                title: Text(transaction.title),
-                subtitle: Text(transaction.date.toString().split(' ')[0]),
-                trailing: Text(
-                  '${transaction.isIncome ? '+' : '-'}\$${transaction.amount.toStringAsFixed(2)}',
-                  style: TextStyle(
-                    color: transaction.isIncome ? Colors.green : Colors.red,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                onTap: () {
-                  // TODO: Show details
+                confirmDismiss: (direction) async {
+                  return await showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: const Text("Confirm"),
+                        content: const Text(
+                          "Are you sure you want to delete this transaction?",
+                        ),
+                        actions: <Widget>[
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: const Text("CANCEL"),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: const Text("DELETE"),
+                          ),
+                        ],
+                      );
+                    },
+                  );
                 },
+                onDismissed: (direction) {
+                  ref
+                      .read(transactionRepositoryProvider)
+                      .deleteTransaction(transaction.id);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Transaction deleted')),
+                  );
+                },
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: transaction.isIncome
+                        ? Colors.green[100]
+                        : Colors.red[100],
+                    child: Icon(
+                      transaction.isIncome
+                          ? Icons.arrow_downward
+                          : Icons.arrow_upward,
+                      color: transaction.isIncome ? Colors.green : Colors.red,
+                    ),
+                  ),
+                  title: Text(transaction.title),
+                  subtitle: Text(transaction.date.toString().split(' ')[0]),
+                  trailing: Text(
+                    '${transaction.isIncome ? '+' : '-'}\$${transaction.amount.toStringAsFixed(2)}',
+                    style: TextStyle(
+                      color: transaction.isIncome ? Colors.green : Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  onTap: () {
+                    // TODO: Show details
+                  },
+                ),
               );
             },
           );
