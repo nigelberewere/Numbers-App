@@ -50,6 +50,11 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
     TransactionCategory.equipment,
     TransactionCategory.transport,
     TransactionCategory.utilities,
+    TransactionCategory.rent,
+    TransactionCategory.food,
+    TransactionCategory.books,
+    TransactionCategory.entertainment,
+    TransactionCategory.tuition,
     TransactionCategory.other,
   ];
 
@@ -119,6 +124,16 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
         return 'Transport';
       case TransactionCategory.utilities:
         return 'Utilities';
+      case TransactionCategory.rent:
+        return 'Rent';
+      case TransactionCategory.food:
+        return 'Food';
+      case TransactionCategory.books:
+        return 'Books';
+      case TransactionCategory.entertainment:
+        return 'Entertainment';
+      case TransactionCategory.tuition:
+        return 'Tuition';
       case TransactionCategory.other:
         return 'Other';
     }
@@ -163,6 +178,16 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
         return Icons.local_shipping;
       case TransactionCategory.utilities:
         return Icons.power;
+      case TransactionCategory.rent:
+        return Icons.home;
+      case TransactionCategory.food:
+        return Icons.restaurant_menu;
+      case TransactionCategory.books:
+        return Icons.menu_book;
+      case TransactionCategory.entertainment:
+        return Icons.movie;
+      case TransactionCategory.tuition:
+        return Icons.school;
       case TransactionCategory.other:
         return Icons.more_horiz;
     }

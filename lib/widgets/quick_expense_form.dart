@@ -14,9 +14,9 @@ class _QuickExpenseFormState extends State<QuickExpenseForm> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
-  
+
   TransactionCategory _selectedCategory = TransactionCategory.other;
-  
+
   // Quick categories for expenses
   final Map<TransactionCategory, Map<String, dynamic>> _quickCategories = {
     TransactionCategory.feed: {
@@ -44,6 +44,17 @@ class _QuickExpenseFormState extends State<QuickExpenseForm> {
       'icon': Icons.power,
       'color': Colors.amber,
     },
+    TransactionCategory.food: {
+      'name': 'Food',
+      'icon': Icons.restaurant_menu,
+      'color': Colors.redAccent,
+    },
+
+    TransactionCategory.entertainment: {
+      'name': 'Fun',
+      'icon': Icons.movie,
+      'color': Colors.purpleAccent,
+    },
     TransactionCategory.other: {
       'name': 'Other',
       'icon': Icons.more_horiz,
@@ -67,14 +78,14 @@ class _QuickExpenseFormState extends State<QuickExpenseForm> {
         type: TransactionType.expense,
         category: _selectedCategory,
         date: DateTime.now(),
-        description: _noteController.text.trim().isNotEmpty 
-            ? _noteController.text.trim() 
+        description: _noteController.text.trim().isNotEmpty
+            ? _noteController.text.trim()
             : null,
         paymentMethod: PaymentMethod.cash,
       );
 
       Navigator.pop(context, transaction);
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Expense added successfully!'),
@@ -88,9 +99,7 @@ class _QuickExpenseFormState extends State<QuickExpenseForm> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Form(
@@ -113,10 +122,7 @@ class _QuickExpenseFormState extends State<QuickExpenseForm> {
                   const SizedBox(width: 12),
                   const Text(
                     'Quick Expense',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const Spacer(),
                   IconButton(
@@ -136,7 +142,9 @@ class _QuickExpenseFormState extends State<QuickExpenseForm> {
                   prefixIcon: Icon(Icons.attach_money),
                   border: OutlineInputBorder(),
                 ),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
                 ],
@@ -145,7 +153,8 @@ class _QuickExpenseFormState extends State<QuickExpenseForm> {
                   if (value == null || value.isEmpty) {
                     return 'Enter amount';
                   }
-                  if (double.tryParse(value) == null || double.parse(value) <= 0) {
+                  if (double.tryParse(value) == null ||
+                      double.parse(value) <= 0) {
                     return 'Invalid amount';
                   }
                   return null;
@@ -156,10 +165,7 @@ class _QuickExpenseFormState extends State<QuickExpenseForm> {
               // Category Selection
               const Text(
                 'Category',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
               Wrap(
@@ -174,7 +180,9 @@ class _QuickExpenseFormState extends State<QuickExpenseForm> {
                         Icon(
                           entry.value['icon'] as IconData,
                           size: 16,
-                          color: isSelected ? Colors.white : entry.value['color'] as Color,
+                          color: isSelected
+                              ? Colors.white
+                              : entry.value['color'] as Color,
                         ),
                         const SizedBox(width: 4),
                         Text(entry.value['name'] as String),

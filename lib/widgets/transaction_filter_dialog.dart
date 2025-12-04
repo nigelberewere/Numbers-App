@@ -48,10 +48,7 @@ class TransactionFilters {
 class TransactionFilterDialog extends StatefulWidget {
   final TransactionFilters initialFilters;
 
-  const TransactionFilterDialog({
-    super.key,
-    required this.initialFilters,
-  });
+  const TransactionFilterDialog({super.key, required this.initialFilters});
 
   @override
   State<TransactionFilterDialog> createState() =>
@@ -159,9 +156,8 @@ class _TransactionFilterDialogState extends State<TransactionFilterDialog> {
                   Text(
                     'Filter Transactions',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color:
-                              Theme.of(context).colorScheme.onPrimaryContainer,
-                        ),
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
                   ),
                   const Spacer(),
                   IconButton(
@@ -188,9 +184,11 @@ class _TransactionFilterDialogState extends State<TransactionFilterDialog> {
                     Card(
                       child: ListTile(
                         leading: const Icon(Icons.calendar_today),
-                        title: Text(_startDate != null && _endDate != null
-                            ? '${_formatDate(_startDate!)} - ${_formatDate(_endDate!)}'
-                            : 'Select date range'),
+                        title: Text(
+                          _startDate != null && _endDate != null
+                              ? '${_formatDate(_startDate!)} - ${_formatDate(_endDate!)}'
+                              : 'Select date range',
+                        ),
                         trailing: _startDate != null
                             ? IconButton(
                                 icon: const Icon(Icons.clear),
@@ -301,16 +299,13 @@ class _TransactionFilterDialogState extends State<TransactionFilterDialog> {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children:
-                          TransactionCategory.values.map((category) {
-                        final isSelected =
-                            _selectedCategories.contains(category);
+                      children: TransactionCategory.values.map((category) {
+                        final isSelected = _selectedCategories.contains(
+                          category,
+                        );
                         return FilterChip(
                           label: Text(_getCategoryName(category)),
-                          avatar: Icon(
-                            _getCategoryIcon(category),
-                            size: 18,
-                          ),
+                          avatar: Icon(_getCategoryIcon(category), size: 18),
                           selected: isSelected,
                           onSelected: (selected) {
                             setState(() {
@@ -335,9 +330,7 @@ class _TransactionFilterDialogState extends State<TransactionFilterDialog> {
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surface,
                 border: Border(
-                  top: BorderSide(
-                    color: Theme.of(context).dividerColor,
-                  ),
+                  top: BorderSide(color: Theme.of(context).dividerColor),
                 ),
               ),
               child: Row(
@@ -394,6 +387,16 @@ class _TransactionFilterDialogState extends State<TransactionFilterDialog> {
         return Icons.pets;
       case TransactionCategory.harvest:
         return Icons.agriculture;
+      case TransactionCategory.rent:
+        return Icons.home;
+      case TransactionCategory.food:
+        return Icons.restaurant_menu;
+      case TransactionCategory.books:
+        return Icons.menu_book;
+      case TransactionCategory.entertainment:
+        return Icons.movie;
+      case TransactionCategory.tuition:
+        return Icons.school;
       case TransactionCategory.other:
         return Icons.more_horiz;
     }

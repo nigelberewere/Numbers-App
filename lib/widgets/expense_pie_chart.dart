@@ -5,10 +5,7 @@ import '../models/models.dart';
 class ExpensePieChart extends StatefulWidget {
   final List<Transaction> transactions;
 
-  const ExpensePieChart({
-    super.key,
-    required this.transactions,
-  });
+  const ExpensePieChart({super.key, required this.transactions});
 
   @override
   State<ExpensePieChart> createState() => _ExpensePieChartState();
@@ -22,19 +19,14 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
     final expensesByCategory = _calculateExpensesByCategory();
 
     if (expensesByCategory.isEmpty) {
-      return const Center(
-        child: Text('No expense data available'),
-      );
+      return const Center(child: Text('No expense data available'));
     }
 
     return Column(
       children: [
         const Text(
           'Expenses by Category',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         SizedBox(
@@ -50,7 +42,8 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
                       touchedIndex = -1;
                       return;
                     }
-                    touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
+                    touchedIndex =
+                        pieTouchResponse.touchedSection!.touchedSectionIndex;
                   });
                 },
               ),
@@ -83,7 +76,8 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
   }
 
   List<PieChartSectionData> _buildPieChartSections(
-      Map<TransactionCategory, double> data) {
+    Map<TransactionCategory, double> data,
+  ) {
     final total = data.values.fold<double>(0, (sum, amount) => sum + amount);
     final colors = _getCategoryColors();
 
@@ -113,7 +107,7 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
 
   Widget _buildLegend(Map<TransactionCategory, double> data) {
     final colors = _getCategoryColors();
-    
+
     return Wrap(
       spacing: 16,
       runSpacing: 8,
@@ -154,6 +148,11 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
       TransactionCategory.trading: Colors.indigo,
       TransactionCategory.harvest: Colors.lime,
       TransactionCategory.livestock: Colors.brown,
+      TransactionCategory.rent: Colors.indigoAccent,
+      TransactionCategory.food: Colors.redAccent,
+      TransactionCategory.books: Colors.teal,
+      TransactionCategory.entertainment: Colors.purpleAccent,
+      TransactionCategory.tuition: Colors.deepOrange,
     };
   }
 
@@ -183,6 +182,16 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
         return 'Harvest';
       case TransactionCategory.livestock:
         return 'Livestock';
+      case TransactionCategory.rent:
+        return 'Rent';
+      case TransactionCategory.food:
+        return 'Food';
+      case TransactionCategory.books:
+        return 'Books';
+      case TransactionCategory.entertainment:
+        return 'Entertainment';
+      case TransactionCategory.tuition:
+        return 'Tuition';
     }
   }
 }

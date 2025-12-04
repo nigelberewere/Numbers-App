@@ -15,6 +15,11 @@ enum TransactionCategory {
   equipment,
   transport,
   utilities,
+  rent,
+  food,
+  books,
+  entertainment,
+  tuition,
   other,
 }
 
@@ -81,6 +86,16 @@ class Transaction {
         return 'Transport';
       case TransactionCategory.utilities:
         return 'Utilities';
+      case TransactionCategory.rent:
+        return 'Rent';
+      case TransactionCategory.food:
+        return 'Food';
+      case TransactionCategory.books:
+        return 'Books';
+      case TransactionCategory.entertainment:
+        return 'Entertainment';
+      case TransactionCategory.tuition:
+        return 'Tuition';
       case TransactionCategory.other:
         return 'Other';
     }
