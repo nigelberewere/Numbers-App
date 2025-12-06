@@ -10,6 +10,7 @@ import 'pages/settings_page.dart';
 import 'pages/splash_page.dart';
 import 'pages/login_page.dart';
 import 'navigator_key.dart';
+import 'services/notifications_service.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -103,6 +104,29 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Check for scheduled reports after build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkScheduledReports();
+    });
+  }
+
+  Future<void> _checkScheduledReports() async {
+    final geminiService = ref.read(geminiServiceProvider);
+    final transactionsAsync = ref.read(transactionListProvider);
+    final budgetsAsync = ref.read(budgetListProvider);
+
+    if (transactionsAsync.hasValue && budgetsAsync.hasValue) {
+      await NotificationsService.instance.checkAndGenerateScheduledReports(
+        geminiService: geminiService,
+        transactions: transactionsAsync.value!,
+        budgets: budgetsAsync.value!,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

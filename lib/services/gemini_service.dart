@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import '../models/models.dart';
 import '../models/recommendation.dart';
+import '../models/financial_report.dart';
 import '../utils/constants.dart';
 
 class GeminiService {
@@ -15,14 +17,15 @@ class GeminiService {
 
   /// Analyze transactions and generate AI-powered recommendations
   Future<List<Recommendation>> analyzeTransactions(
-    List<Transaction> transactions,
-  ) async {
+    List<Transaction> transactions, {
+    List<Budget> budgets = const [],
+  }) async {
     if (transactions.isEmpty) {
       throw Exception('No transaction data available to analyze');
     }
 
     // Build analysis prompt
-    final prompt = _buildPrompt(transactions);
+    final prompt = _buildPrompt(transactions, budgets);
 
     try {
       // Generate content using Gemini
@@ -39,7 +42,7 @@ class GeminiService {
     }
   }
 
-  String _buildPrompt(List<Transaction> transactions) {
+  String _buildPrompt(List<Transaction> transactions, List<Budget> budgets) {
     // Calculate summary statistics
     final totalIncome = transactions
         .where((t) => t.isIncome)
@@ -64,13 +67,16 @@ class GeminiService {
       ..sort((a, b) => b.value.compareTo(a.value));
 
     return '''
-You are a financial advisor AI assistant analyzing financial records. Based on the following transaction data, provide 4-6 specific, actionable recommendations.
+You are a financial advisor AI assistant analyzing financial records. Based on the following transaction data and budgets, provide 4-6 specific, actionable recommendations.
 
 Financial Summary:
 - Total Income: \$${totalIncome.toStringAsFixed(2)}
 - Total Expenses: \$${totalExpenses.toStringAsFixed(2)}
 - Net Profit/Loss: \$${netProfit.toStringAsFixed(2)}
 - Number of Transactions: ${transactions.length}
+
+Budgets:
+${budgets.isEmpty ? 'No active budgets.' : budgets.map((b) => '- ${b.name}: \$${b.amount} (${b.periodName})').join('\n')}
 
 Top Spending Categories:
 ${topCategories.take(5).map((e) => '- ${e.key}: \$${e.value.toStringAsFixed(2)}').join('\n')}
@@ -81,8 +87,9 @@ Please provide recommendations in the following format. Each recommendation shou
 Where TYPE can be:
 - INSIGHT: General observations about financial patterns
 - SAVINGS: Specific opportunities to reduce expenses
-- WARNING: Concerns or risks to address
+- WARNING: Concerns or risks to address (including budget overruns)
 - OPPORTUNITY: Ideas for increasing income or growth
+- TREND: Emerging spending patterns (e.g., "Coffee spending up 20%")
 
 Example:
 INSIGHT|Strong Income Performance|Your income has been consistent, showing financial stability.
@@ -128,6 +135,9 @@ Requirements:
             case 'OPPORTUNITY':
               type = RecommendationType.opportunity;
               break;
+            case 'TREND':
+              type = RecommendationType.trend;
+              break;
           }
 
           if (type != null && title.isNotEmpty && description.isNotEmpty) {
@@ -159,5 +169,90 @@ Requirements:
     }
 
     return recommendations;
+  }
+
+  /// Generate a weekly or monthly financial report
+  Future<FinancialReport> generateReport(
+    List<Transaction> transactions,
+    List<Budget> budgets,
+    ReportType type,
+  ) async {
+    if (transactions.isEmpty) {
+      throw Exception('No transaction data available for report');
+    }
+
+    final totalIncome = transactions
+        .where((t) => t.isIncome)
+        .fold(0.0, (sum, t) => sum + t.amount);
+
+    final totalExpenses = transactions
+        .where((t) => t.isExpense)
+        .fold(0.0, (sum, t) => sum + t.amount);
+
+    final netSavings = totalIncome - totalExpenses;
+
+    final prompt =
+        '''
+You are a financial analyst generating a ${type == ReportType.weekly ? 'Weekly' : 'Monthly'} Financial Report.
+
+Data:
+- Total Income: \$${totalIncome.toStringAsFixed(2)}
+- Total Expenses: \$${totalExpenses.toStringAsFixed(2)}
+- Net Savings: \$${netSavings.toStringAsFixed(2)}
+- Transaction Count: ${transactions.length}
+
+Budgets:
+${budgets.isEmpty ? 'No active budgets.' : budgets.map((b) => '- ${b.name}: \$${b.amount}').join('\n')}
+
+Please generate a report in the following JSON format (do not include markdown formatting like ```json):
+{
+  "summary": "A concise 2-3 sentence summary of financial performance.",
+  "keyTrends": ["Trend 1", "Trend 2", "Trend 3"],
+  "aiAnalysis": "A detailed paragraph analyzing spending habits, budget adherence, and advice for the next period."
+}
+''';
+
+    try {
+      final response = await _model.generateContent([Content.text(prompt)]);
+      final text = response.text;
+
+      if (text == null || text.isEmpty) {
+        throw Exception('Empty response from AI');
+      }
+
+      // Clean up markdown if present
+      final jsonStr = text
+          .replaceAll('```json', '')
+          .replaceAll('```', '')
+          .trim();
+      final Map<String, dynamic> data = _simpleJsonDecode(jsonStr);
+
+      return FinancialReport(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        type: type,
+        date: DateTime.now(),
+        summary: data['summary'] ?? 'Report generated successfully.',
+        totalIncome: totalIncome,
+        totalExpenses: totalExpenses,
+        netSavings: netSavings,
+        keyTrends: List<String>.from(data['keyTrends'] ?? []),
+        aiAnalysis: data['aiAnalysis'] ?? 'No detailed analysis available.',
+      );
+    } catch (e) {
+      throw Exception('Failed to generate report: $e');
+    }
+  }
+
+  Map<String, dynamic> _simpleJsonDecode(String source) {
+    try {
+      return jsonDecode(source);
+    } catch (e) {
+      // Fallback if JSON is malformed
+      return {
+        'summary': 'Could not parse AI response.',
+        'keyTrends': [],
+        'aiAnalysis': 'Raw response: $source',
+      };
+    }
   }
 }

@@ -58,6 +58,7 @@ dependencies:
   firebase_storage: ^13.0.4
   flutter_riverpod: ^3.0.3
   flutter_dotenv: ^6.0.0
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:

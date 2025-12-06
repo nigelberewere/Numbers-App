@@ -1,4 +1,4 @@
-enum RecommendationType { insight, savings, warning, opportunity }
+enum RecommendationType { insight, savings, warning, opportunity, trend }
 
 class Recommendation {
   final String id;
@@ -27,6 +27,8 @@ class Recommendation {
         return 'Warning';
       case RecommendationType.opportunity:
         return 'Growth Opportunity';
+      case RecommendationType.trend:
+        return 'Trend Alert';
     }
   }
 
@@ -40,6 +42,8 @@ class Recommendation {
         return '⚠️';
       case RecommendationType.opportunity:
         return '📈';
+      case RecommendationType.trend:
+        return '📊';
     }
   }
 

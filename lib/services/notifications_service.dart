@@ -2,7 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/notification_item.dart';
+import '../models/financial_report.dart';
+import '../models/budget.dart';
+import '../models/transaction.dart';
+import '../services/gemini_service.dart';
 
 /// Simple in-memory notifications service using ValueNotifier so UI
 /// can listen for changes. Now supports local persistence.
@@ -106,5 +111,83 @@ class NotificationsService {
   void clearAll() {
     _notifications.value = [];
     _saveNotifications();
+  }
+
+  Future<void> checkAndGenerateScheduledReports({
+    required GeminiService geminiService,
+    required List<Transaction> transactions,
+    required List<Budget> budgets,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final now = DateTime.now();
+
+    // Check Weekly Report (every Monday)
+    final lastWeekly = prefs.getInt('last_weekly_report_date');
+    final lastWeeklyDate = lastWeekly != null
+        ? DateTime.fromMillisecondsSinceEpoch(lastWeekly)
+        : null;
+
+    if (now.weekday == DateTime.monday &&
+        (lastWeeklyDate == null ||
+            now.difference(lastWeeklyDate).inDays >= 7)) {
+      try {
+        final report = await geminiService.generateReport(
+          transactions,
+          budgets,
+          ReportType.weekly,
+        );
+
+        add(
+          NotificationItem(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            title: 'Weekly Financial Report Ready',
+            body: report.summary,
+            read: false,
+            timestamp: DateTime.now(),
+          ),
+        );
+
+        await prefs.setInt(
+          'last_weekly_report_date',
+          now.millisecondsSinceEpoch,
+        );
+      } catch (e) {
+        debugPrint('Failed to generate weekly report: $e');
+      }
+    }
+
+    // Check Monthly Report (1st of every month)
+    final lastMonthly = prefs.getInt('last_monthly_report_date');
+    final lastMonthlyDate = lastMonthly != null
+        ? DateTime.fromMillisecondsSinceEpoch(lastMonthly)
+        : null;
+
+    if (now.day == 1 &&
+        (lastMonthlyDate == null || now.month != lastMonthlyDate.month)) {
+      try {
+        final report = await geminiService.generateReport(
+          transactions,
+          budgets,
+          ReportType.monthly,
+        );
+
+        add(
+          NotificationItem(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            title: 'Monthly Financial Report Ready',
+            body: report.summary,
+            read: false,
+            timestamp: DateTime.now(),
+          ),
+        );
+
+        await prefs.setInt(
+          'last_monthly_report_date',
+          now.millisecondsSinceEpoch,
+        );
+      } catch (e) {
+        debugPrint('Failed to generate monthly report: $e');
+      }
+    }
   }
 }

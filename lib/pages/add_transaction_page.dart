@@ -288,28 +288,27 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
           await repo.addTransaction(transaction);
         }
 
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                widget.existingTransaction != null
-                    ? 'Transaction updated successfully!'
-                    : '${widget.isIncome ? "Income" : "Expense"} added successfully!',
-              ),
-              backgroundColor: Colors.green,
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              widget.existingTransaction != null
+                  ? 'Transaction updated successfully!'
+                  : '${widget.isIncome ? "Income" : "Expense"} added successfully!',
             ),
-          );
-          Navigator.pop(context, transaction);
-        }
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context, transaction);
       } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error saving transaction: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving transaction: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -359,18 +358,16 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                     await ref
                         .read(transactionRepositoryProvider)
                         .deleteTransaction(widget.existingTransaction!.id);
-                    if (mounted) {
-                      Navigator.pop(context);
-                    }
+                    if (!context.mounted) return;
+                    Navigator.pop(context);
                   } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Error deleting transaction: $e'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error deleting transaction: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
                   }
                 }
               },

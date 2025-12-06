@@ -28,7 +28,10 @@ class _SmartRecommendationsPageState
     _geminiService = ref.read(geminiServiceProvider);
   }
 
-  Future<void> _analyzeWithAI(List<Transaction> transactions) async {
+  Future<void> _analyzeWithAI(
+    List<Transaction> transactions,
+    List<Budget> budgets,
+  ) async {
     if (transactions.isEmpty) {
       // Should be handled by UI, but safety check
       return;
@@ -43,6 +46,7 @@ class _SmartRecommendationsPageState
     try {
       final recommendations = await _geminiService.analyzeTransactions(
         transactions,
+        budgets: budgets,
       );
 
       if (mounted) {
@@ -65,6 +69,7 @@ class _SmartRecommendationsPageState
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final transactionsAsync = ref.watch(transactionListProvider);
+    final budgetsAsync = ref.watch(budgetListProvider);
     final summaryAsync = ref.watch(financialSummaryProvider);
 
     return Scaffold(
@@ -76,7 +81,9 @@ class _SmartRecommendationsPageState
               icon: const Icon(Icons.refresh),
               onPressed: () {
                 transactionsAsync.whenData((transactions) {
-                  _analyzeWithAI(transactions);
+                  budgetsAsync.whenData((budgets) {
+                    _analyzeWithAI(transactions, budgets);
+                  });
                 });
               },
               tooltip: 'Refresh recommendations',
@@ -93,7 +100,9 @@ class _SmartRecommendationsPageState
               // but we can force refresh if needed.
               // For now, just re-analyze if we have recommendations.
               if (_recommendations.isNotEmpty) {
-                await _analyzeWithAI(transactions);
+                budgetsAsync.whenData((budgets) {
+                  _analyzeWithAI(transactions, budgets);
+                });
               }
               // To force data refresh, we would invalidate providers:
               // ref.invalidate(transactionListProvider);
@@ -253,16 +262,20 @@ class _SmartRecommendationsPageState
                     ),
                   )
                 else if (_recommendations.isEmpty && !_isLoading)
-                  FilledButton.icon(
-                    onPressed: () => _analyzeWithAI(transactions),
-                    icon: const Icon(Icons.psychology),
-                    label: const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Text('Analyze with AI'),
+                  budgetsAsync.when(
+                    data: (budgets) => FilledButton.icon(
+                      onPressed: () => _analyzeWithAI(transactions, budgets),
+                      icon: const Icon(Icons.psychology),
+                      label: const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Text('Analyze with AI'),
+                      ),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(50),
+                      ),
                     ),
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(50),
-                    ),
+                    loading: () => const CircularProgressIndicator(),
+                    error: (_, __) => const SizedBox(),
                   ),
 
                 const SizedBox(height: 16),
@@ -320,7 +333,11 @@ class _SmartRecommendationsPageState
                           ),
                           const SizedBox(height: 16),
                           OutlinedButton.icon(
-                            onPressed: () => _analyzeWithAI(transactions),
+                            onPressed: () {
+                              budgetsAsync.whenData((budgets) {
+                                _analyzeWithAI(transactions, budgets);
+                              });
+                            },
                             icon: const Icon(Icons.refresh),
                             label: const Text('Try Again'),
                             style: OutlinedButton.styleFrom(
@@ -428,6 +445,8 @@ class _RecommendationCard extends StatelessWidget {
         return Colors.orange;
       case RecommendationType.opportunity:
         return Colors.purple;
+      case RecommendationType.trend:
+        return Colors.teal;
     }
   }
 
@@ -441,6 +460,8 @@ class _RecommendationCard extends StatelessWidget {
         return Icons.warning_amber;
       case RecommendationType.opportunity:
         return Icons.trending_up;
+      case RecommendationType.trend:
+        return Icons.show_chart;
     }
   }
 

@@ -64,21 +64,46 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 36,
-              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-              backgroundImage: user?.photoUrl != null
-                  ? NetworkImage(user!.photoUrl!)
-                  : null,
-              child: user?.photoUrl == null
-                  ? Text(
-                      fullName.isNotEmpty ? fullName.characters.first : '?',
-                      style: Theme.of(context).textTheme.headlineMedium
-                          ?.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                    )
-                  : null,
+            SizedBox(
+              width: 72,
+              height: 72,
+              child: CircleAvatar(
+                radius: 36,
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                child: user?.photoUrl != null
+                    ? ClipOval(
+                        child: Image.network(
+                          user!.photoUrl!,
+                          width: 72,
+                          height: 72,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Center(
+                              child: Text(
+                                fullName.isNotEmpty
+                                    ? fullName.characters.first
+                                    : '?',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                    ),
+                              ),
+                            );
+                          },
+                        ),
+                      )
+                    : Text(
+                        fullName.isNotEmpty ? fullName.characters.first : '?',
+                        style: Theme.of(context).textTheme.headlineMedium
+                            ?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                      ),
+              ),
             ),
             const SizedBox(width: 16),
             Expanded(

@@ -330,8 +330,8 @@ class DashboardPage extends ConsumerWidget {
                                 leading: CircleAvatar(
                                   backgroundColor:
                                       t.type == TransactionType.income
-                                      ? Colors.green.withOpacity(0.1)
-                                      : Colors.red.withOpacity(0.1),
+                                      ? Colors.green.withValues(alpha: 0.1)
+                                      : Colors.red.withValues(alpha: 0.1),
                                   child: Icon(
                                     t.type == TransactionType.income
                                         ? Icons.arrow_upward

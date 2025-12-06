@@ -1,0 +1,11 @@
+Analyzing numbers...                                            
+
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\pages\add_transaction_page.dart:292:32 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\pages\add_transaction_page.dart:302:25 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\pages\add_transaction_page.dart:306:32 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\pages\add_transaction_page.dart:363:37 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\pages\add_transaction_page.dart:367:44 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\pages\dashboard_page.dart:333:54 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\pages\dashboard_page.dart:334:52 - deprecated_member_use
+warning - Dead code - lib\services\gemini_service.dart:132:15 - dead_code
+
